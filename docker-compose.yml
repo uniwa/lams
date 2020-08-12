@@ -11,7 +11,7 @@ services:
         # environment:
         #     DBHOST: '83.212.78.59'
         #     DBNAME: lams_docker_setup
-        #     DBUSERNAME: root
+        #     DBUSERNAME: lams_docker_setup
         #     DBPASSWORD: ZDXUGWsf5A
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
@@ -19,5 +19,5 @@ services:
             - 8181:80
         environment:
             PMA_HOST: '83.212.78.59'
-            MYSQL_USERNAME: root
+            MYSQL_USERNAME: lams_docker_setup
             MYSQL_ROOT_PASSWORD: ZDXUGWsf5A
