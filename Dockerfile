@@ -19,8 +19,20 @@ RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
     && git checkout 55371b31334b7eea982cc20ca44d64632826fa06
 
-ADD ./config/common.properties lams/lams_build/common.properties
-ADD ./config/unix.properties lams/lams_build/unix.properties
+ADD ./lams_build/common.properties lams/lams_build/common.properties
+ADD ./lams_build/unix.properties lams/lams_build/unix.properties
+
+ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/insert_lams_users.sql
+
+ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/conf/scss/_lams_variables_sch.scss
+
+ADD ./lams_central/web /tmp/lams_central_web
+RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams_central_web \
+    && cd /app/lams/lams_central && ant sass.compile
+
+ADD ./lams_monitoring/web /tmp/lams_monitoring_web
+RUN cp -R /tmp/lams_monitoring_web/* /app/lams/lams_monitoring/web && rm -fR /tmp/lams_monitoring_web \
+    && cd /app/lams/lams_monitoring && ant sass.compile
 
 ENV DBHOST=83.212.78.59 \
     DBNAME=lams_docker_setup_db \
