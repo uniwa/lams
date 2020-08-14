@@ -26,6 +26,7 @@ ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/inse
 
 ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/conf/scss/_lams_variables_sch.scss
 ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_central/conf/scss/_bootstrap-variables_sch.scss
+ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/favicon/lams/favicon.ico
 
 ADD ./lams_central/web /tmp/lams_central_web
 RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams_central_web \
@@ -34,6 +35,9 @@ RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams
 ADD ./lams_monitoring/web /tmp/lams_monitoring_web
 RUN cp -R /tmp/lams_monitoring_web/* /app/lams/lams_monitoring/web && rm -fR /tmp/lams_monitoring_web \
     && cd /app/lams/lams_monitoring && ant sass.compile
+
+ADD ./lams_www/web /tmp/lams_www_web
+RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
 
 ENV DBHOST=83.212.78.59 \
     DBNAME=lams_docker_setup_db \
