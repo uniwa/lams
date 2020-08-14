@@ -8,16 +8,16 @@ services:
             - 80:8080
         volumes:
             - ./:/app2
-        # environment:
-        #     DBHOST: '83.212.78.59'
-        #     DBNAME: lams_docker_setup
-        #     DBUSERNAME: lams_docker_setup
-        #     DBPASSWORD: ZDXUGWsf5A
+        environment:
+            DBHOST: '83.212.78.59'
+            DBNAME: lams
+            DBUSERNAME: lams_docker_setup_user
+            DBPASSWORD: ZDXUGWsf5A
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         ports:
             - 8181:80
         environment:
             PMA_HOST: '83.212.78.59'
-            MYSQL_USERNAME: lams_docker_setup
+            MYSQL_USERNAME: lams_docker_setup_user
             MYSQL_ROOT_PASSWORD: ZDXUGWsf5A
