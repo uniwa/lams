@@ -80,7 +80,11 @@
     <nav class="navbar navbar-default navbar-login">
 		<div class="container">
 	        <div class="navbar-header">
-	          <a class="navbar-brand navbar-brand-login" href="#"><%=Configuration.get(ConfigurationKeys.SITE_NAME)%></a>
+	          <%--<a class="navbar-brand navbar-brand-login" href="#"><%=Configuration.get(ConfigurationKeys.SITE_NAME)%></a>--%>
+			  <a class="navbar-brand navbar-brand-login" href="/">Αρχική</a>
+			  <a class="navbar-brand navbar-brand-login" href="/lams/www/activities.jsp">Είδη Δραστηριοτήτων</a>
+			  <a class="navbar-brand navbar-brand-login" href="/lams/www/guide.jsp">Οδηγός Χρήσης</a>
+			  <a class="navbar-brand navbar-brand-login" href="/lams/www/terms.jsp">Όροι</a>
 	        </div>
 			<div class="navbar-collapse collapse navbar-right">
 				<div class="pull-right login-logo" title="LAMS - Learning Activity Management System"></div>
