@@ -2,10 +2,43 @@
 @import "_lams_variables_sch.scss";
 @import "_main_base.scss";
 
+.top-nav {
+    background-color: #0087e5;
+}
+
+.navbar-nav > li > a {
+    color: #fff !important;
+}
+
+.navbar-nav > li > a:hover, .top-nav .nav .open > a {
+    color: #515356 !important;
+}
+
+.offcanvas-toggle-header i {
+    color: #fff !important;
+}
+
+.offcanvas-toggle-header:hover i {
+    color: #515356 !important;
+}
+
+ul.dropdown-usermenu li {
+    background: #f7f7f7;
+}
+
+ul.dropdown-usermenu li a:hover {
+    background: #fff;
+}
+
 .offcanvas-logo {
     background-color: #f7f7f7;
 }
 
 .offcanvas-logo .logo {
     background-size: contain;
+    background-position-x: 38px;
+}
+
+#favorite-organisations > li > a, .tablesorter a {
+    color: #fff;
 }
