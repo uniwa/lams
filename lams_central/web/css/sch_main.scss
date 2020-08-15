@@ -1,3 +1,11 @@
 @import "_dialogs.scss";
 @import "_lams_variables_sch.scss";
 @import "_main_base.scss";
+
+.offcanvas-logo {
+    background-color: #f7f7f7;
+}
+
+.offcanvas-logo .logo {
+    background-size: contain;
+}
