@@ -11,7 +11,7 @@ services:
             - ./:/app2
         environment:
             DBHOST: '83.212.78.59'
-            DBNAME: lams
+            DBNAME: lams_v4
             DBUSERNAME: lams_docker_setup_user
             DBPASSWORD: ZDXUGWsf5A
     phpmyadmin:

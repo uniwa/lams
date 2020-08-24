@@ -17,7 +17,7 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
-    && git checkout 55371b31334b7eea982cc20ca44d64632826fa06
+    && git checkout b0aa5ff530f717d8edb5a08bc52336837c1e83c8
 
 ADD ./lams_build/common.properties lams/lams_build/common.properties
 ADD ./lams_build/unix.properties lams/lams_build/unix.properties
