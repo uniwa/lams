@@ -40,20 +40,24 @@ RUN cp -R /tmp/lams_monitoring_web/* /app/lams/lams_monitoring/web && rm -fR /tm
 ADD ./lams_www/web /tmp/lams_www_web
 RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
 
-ENV DBHOST=83.212.78.59 \
+RUN apk add mariadb && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql && mkdir /run/mysqld/ && sed -i '/skip-networking/s/^/#/' /etc/my.cnf.d/mariadb-server.cnf
+
+ENV DBHOST=127.0.0.1 \
     DBNAME=lams_docker_setup_db \
     DBUSERNAME=lams_docker_setup_user \
-    DBPASSWORD=ZDXUGWsf5A
+    DBPASSWORD=lams_docker_setup_password
 
 RUN cd lams/lams_build/ \
+    && sh -c "mysqld --user=root &" \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
 
 # Replace the hardcoded database data
-RUN find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/83\.212\.78\.59/$\{env\.DBHOST\}/g" {} \; \
+RUN apk del --purge mariadb && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
+    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_db/$\{env\.DBNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_user/$\{env\.DBUSERNAME\}/g" {} \; \
-    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/ZDXUGWsf5A/$\{env\.DBPASSWORD\}/g" {} \;
+    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_password/$\{env\.DBPASSWORD\}/g" {} \;
 
 CMD [ "/usr/local/wildfly-14.0.1/bin/standalone.sh", "-bmanagement", "0.0.0.0", "-Djboss.bind.address=0.0.0.0" ]

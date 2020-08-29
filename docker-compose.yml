@@ -9,11 +9,10 @@ services:
             - 9990:9990
         volumes:
             - ./:/app2
+        env_file: .env
         environment:
             DBHOST: '83.212.78.59'
             DBNAME: lams_v4
-            DBUSERNAME: lams_docker_setup_user
-            DBPASSWORD: ZDXUGWsf5A
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         ports:
@@ -21,4 +20,3 @@ services:
         environment:
             PMA_HOST: '83.212.78.59'
             MYSQL_USERNAME: lams_docker_setup_user
-            MYSQL_ROOT_PASSWORD: ZDXUGWsf5A
