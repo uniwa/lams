@@ -10,9 +10,6 @@ services:
         volumes:
             - ./:/app2
         env_file: .env
-        environment:
-            DBHOST: '83.212.78.59'
-            DBNAME: lams_v4
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         ports:
