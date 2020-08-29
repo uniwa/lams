@@ -44,12 +44,12 @@ ADD ./lams_www/web /tmp/lams_www_web
 RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
 
 ENV DBHOST=127.0.0.1 \
-    DBNAME=lams_docker_setup_db \
+    DBNAME=performance_schema \
     DBUSERNAME=lams_docker_setup_user \
     DBPASSWORD=lams_docker_setup_password
 
 RUN cd lams/lams_build/ \
-    && sh -c "mysqld --user=root &" \
+    && sh -c "mysqld --user=root --skip-grant-tables &" \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
@@ -57,7 +57,7 @@ RUN cd lams/lams_build/ \
 # Replace the hardcoded database data
 RUN apk del --purge mariadb && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
-    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_db/$\{env\.DBNAME\}/g" {} \; \
+    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/performance_schema/$\{env\.DBNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_user/$\{env\.DBUSERNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_password/$\{env\.DBPASSWORD\}/g" {} \;
 
