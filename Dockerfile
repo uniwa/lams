@@ -6,6 +6,9 @@ WORKDIR /app
 RUN apk add build-base ruby ruby-dev apache-ant git wget curl \
     && gem install sass
 
+# Mysql because LAMS requires a database to build
+RUN apk add mariadb && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql && mkdir /run/mysqld/ && sed -i '/skip-networking/s/^/#/' /etc/my.cnf.d/mariadb-server.cnf
+
 # Wildfly application server
 RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.tar.gz" \
     && tar xzf ./wildfly-14.0.1.Final.tar.gz \
@@ -39,8 +42,6 @@ RUN cp -R /tmp/lams_monitoring_web/* /app/lams/lams_monitoring/web && rm -fR /tm
 
 ADD ./lams_www/web /tmp/lams_www_web
 RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
-
-RUN apk add mariadb && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql && mkdir /run/mysqld/ && sed -i '/skip-networking/s/^/#/' /etc/my.cnf.d/mariadb-server.cnf
 
 ENV DBHOST=127.0.0.1 \
     DBNAME=lams_docker_setup_db \
