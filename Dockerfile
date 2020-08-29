@@ -53,7 +53,7 @@ ENV DBHOST=127.0.0.1 \
 
 RUN cd lams/lams_build/ \
     && sh -c "mysqld --user=root --skip-grant-tables &" \
-    && sleep 2 \
+    && sleep 5 \
     && mysql -uroot -e "create database lams_docker_setup_db" \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
