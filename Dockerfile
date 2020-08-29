@@ -7,7 +7,10 @@ RUN apk add build-base ruby ruby-dev apache-ant git wget curl \
     && gem install sass
 
 # Mysql because LAMS requires a database to build
-RUN apk add mariadb && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql && mkdir /run/mysqld/ && sed -i '/skip-networking/s/^/#/' /etc/my.cnf.d/mariadb-server.cnf
+RUN apk add mariadb mariadb-client \
+    && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql \
+    && mkdir /run/mysqld/ \
+    && sed -i '/skip-networking/s/^/#/' /etc/my.cnf.d/mariadb-server.cnf
 
 # Wildfly application server
 RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.tar.gz" \
@@ -44,20 +47,22 @@ ADD ./lams_www/web /tmp/lams_www_web
 RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
 
 ENV DBHOST=127.0.0.1 \
-    DBNAME=performance_schema \
+    DBNAME=lams_docker_setup_db \
     DBUSERNAME=lams_docker_setup_user \
     DBPASSWORD=lams_docker_setup_password
 
 RUN cd lams/lams_build/ \
     && sh -c "mysqld --user=root --skip-grant-tables &" \
+    && sleep 2 \
+    && mysql -uroot -e "create database lams_docker_setup_db" \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
 
 # Replace the hardcoded database data
-RUN apk del --purge mariadb && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
+RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
-    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/performance_schema/$\{env\.DBNAME\}/g" {} \; \
+    && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_db/$\{env\.DBNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_user/$\{env\.DBUSERNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_password/$\{env\.DBPASSWORD\}/g" {} \;
 
