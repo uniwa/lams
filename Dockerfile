@@ -3,8 +3,15 @@ FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.8_10
 WORKDIR /app
 
 # System packages and dependecies
-RUN apk add build-base ruby ruby-dev apache-ant git wget curl \
-    && gem install sass
+RUN apk add build-base ruby ruby-dev apache-ant git wget curl nginx supervisor \
+    && gem install sass \
+    # Bring in gettext so we can get `envsubst`, then throw
+	# the rest away. To do this, we need to install `gettext`
+	# then move `envsubst` out of the way so `gettext` can
+    # be deleted completely, then move `envsubst` back.
+    && apk add gettext libintl \
+    && cp /usr/bin/envsubst /usr/local/bin/envsubst \
+    && apk del gettext
 
 # Mysql because LAMS requires a database to build
 RUN apk add mariadb mariadb-client \
@@ -49,7 +56,9 @@ RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
 ENV DBHOST=127.0.0.1 \
     DBNAME=lams_docker_setup_db \
     DBUSERNAME=lams_docker_setup_user \
-    DBPASSWORD=lams_docker_setup_password
+    DBPASSWORD=lams_docker_setup_password \
+    WEB_CONCURRENCY=8 \
+    PORT=9080
 
 RUN cd lams/lams_build/ \
     && sh -c "mysqld --user=root --skip-grant-tables &" \
@@ -59,6 +68,10 @@ RUN cd lams/lams_build/ \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
 
+ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
+ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
+ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template
+
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
@@ -66,4 +79,4 @@ RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /r
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_user/$\{env\.DBUSERNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_password/$\{env\.DBPASSWORD\}/g" {} \;
 
-CMD [ "/usr/local/wildfly-14.0.1/bin/standalone.sh", "-bmanagement", "0.0.0.0", "-Djboss.bind.address=0.0.0.0" ]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
