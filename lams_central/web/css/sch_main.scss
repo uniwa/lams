@@ -40,6 +40,10 @@ ul.dropdown-usermenu li a:hover {
     height: 150px;
 }
 
+#offcanvas td.active {
+    border-right: 10px solid #ef927f;
+}
+
 #favorite-organisations > li > a, .tablesorter a {
     color: #fff;
 }
