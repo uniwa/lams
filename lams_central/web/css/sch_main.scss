@@ -3,7 +3,7 @@
 @import "_main_base.scss";
 
 .top-nav {
-    background-color: #0087e5;
+    background-color: #EF927F;
 }
 
 .navbar-nav > li > a {
@@ -36,10 +36,37 @@ ul.dropdown-usermenu li a:hover {
 
 .offcanvas-logo .logo {
     background-size: contain;
-    background-position-x: 25px;
-    height: 100px;
+    background-position-x: 0px;
+    height: 150px;
 }
 
 #favorite-organisations > li > a, .tablesorter a {
     color: #fff;
+}
+
+// Btn colors overwrite
+.btn-primary {
+    color: #fff;
+    background-color: #ef927f;
+    border-color: #ffffff;
+}
+.btn-primary.focus,.btn-primary:focus {
+    color: #fff;
+    background-color: #286090;
+    border-color: #122b40}
+.btn-primary:hover {
+    color: #fff;
+    background-color: #d88170;
+    border-color: #d68170;
+}
+.btn-primary.active,.btn-primary:active,.open>.dropdown-toggle.btn-primary {
+    color: #fff;
+    background-color: #ef927f;
+    background-image: none;
+    border-color: #ef927f;
+}
+.btn-primary.active.focus,.btn-primary.active:focus,.btn-primary.active:hover,.btn-primary:active.focus,.btn-primary:active:focus,.btn-primary:active:hover,.open>.dropdown-toggle.btn-primary.focus,.open>.dropdown-toggle.btn-primary:focus,.open>.dropdown-toggle.btn-primary:hover {
+    color: #fff;
+    background-color: #ef927f;
+    border-color: #ef927f;
 }
