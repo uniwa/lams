@@ -8,12 +8,28 @@ services:
             - 80:9080
             - 9990:9990
         volumes:
-            - ./:/app2
+            - ./src:/app/lams
+            # - ./:/app2
         env_file: .env
+        depends_on:
+          - mysql
+    mysql:
+        image: mysql
+        command: --default-authentication-plugin=mysql_native_password
+        restart: always
+        volumes:
+            - ../data/lams/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: verysecret
+            MYSQL_DATABASE: lams
+            MYSQL_USER: lams
+            MYSQL_PASSWORD: verysecret
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
+        depends_on:
+          - mysql
         ports:
             - 8181:80
         environment:
-            PMA_HOST: '83.212.78.59'
-            MYSQL_USERNAME: lams_docker_setup_user
+            PMA_HOST: 'mysql'
+            MYSQL_USERNAME: root
