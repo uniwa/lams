@@ -25,12 +25,15 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
     && mv wildfly-14.0.1.Final wildfly-14.0.1 \
     && mv wildfly-14.0.1 /usr/local/ \
     && rm -fR ./wildfly-14.0.1.Final.tar.gz \
-    && mkdir /opt/lams-data/
+    && mkdir /opt/lams-data/ \
+    && ln -s /usr/local/wildfly-14.0.1 /usr/local/wildfly-14.0
 
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
     && git checkout b0aa5ff530f717d8edb5a08bc52336837c1e83c8
+
+ADD ./lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java /app/lams/lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java
 
 ADD ./lams_build/common.properties lams/lams_build/common.properties
 ADD ./lams_build/unix.properties lams/lams_build/unix.properties
@@ -41,7 +44,6 @@ ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/con
 ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_central/conf/scss/_bootstrap-variables_sch.scss
 ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/favicon/lams/favicon.ico
 ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app/lams/lams_central/conf/language/lams/ApplicationResources_el_GR.properties
-ADD ./lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java /app/lams/lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java
 
 ADD ./lams_central/web /tmp/lams_central_web
 RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams_central_web \
@@ -75,7 +77,6 @@ ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template
 
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
-    && ln -s /usr/local/wildfly-14.0.1 /usr/local/wildfly-14.0 \
     && ln -s /usr/bin/sass /usr/local/bin/sass \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_db/$\{env\.DBNAME\}/g" {} \; \
