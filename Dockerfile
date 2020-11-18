@@ -39,6 +39,8 @@ ADD ./lams_build/common.properties lams/lams_build/common.properties
 ADD ./lams_build/unix.properties lams/lams_build/unix.properties
 
 ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/insert_lams_users.sql
+ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java
+ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java
 
 ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/conf/scss/_lams_variables_sch.scss
 ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_central/conf/scss/_bootstrap-variables_sch.scss
