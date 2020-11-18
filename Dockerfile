@@ -42,7 +42,7 @@ ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/inse
 ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java
-ADD ./lams_common/src/lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml /app/lams/lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml
+ADD ./lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml /app/lams/lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml
 
 ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/conf/scss/_lams_variables_sch.scss
 ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_central/conf/scss/_bootstrap-variables_sch.scss

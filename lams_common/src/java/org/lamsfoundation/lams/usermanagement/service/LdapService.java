@@ -58,6 +58,13 @@ import org.lamsfoundation.lams.util.ConfigurationKeys;
 import org.lamsfoundation.lams.util.HashUtil;
 import org.lamsfoundation.lams.util.LanguageUtil;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
 /**
  * @author jliew
  *
@@ -346,11 +353,138 @@ public class LdapService implements ILdapService {
 		    }
 		} else {
 		    log.warn("No LAMS organisations found with the " + orgField + ": " + ldapOrg);
-		    isAddingUserSuccessful = false;
+		    isAddingUserSuccessful = createOrgs(ldapOrg, attrs, userId);
 		}
 	    }
 	}
 	return isAddingUserSuccessful;
+    }
+
+    private boolean createOrgs(String ldapOrg, Attributes attrs, Integer userId) {
+      String driverClassName = "com.mysql.cj.jdbc.Driver";
+      String connectionUrl = "jdbc:mysql://" + System.getenv("DBHOST") + ":3306/" + System.getenv("DBNAME") + "?useUnicode=true&characterEncoding=UTF-8";
+
+      Connection conn = null;
+      int orgId = -1;
+      try {
+                Class.forName(driverClassName);
+
+                conn = DriverManager.getConnection(connectionUrl, System.getenv("DBUSERNAME"), System.getenv("DBPASSWORD"));
+        } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+        }
+        catch (SQLException ex) {
+                System.out.println("SQLException");
+        }
+      PreparedStatement ptmt = null;
+      PreparedStatement ptmt1 = null;
+      PreparedStatement ptmt2 = null;
+      PreparedStatement ptmt3 = null;
+
+      java.util.Date utilDate = new java.util.Date();
+      java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+
+      try {
+          String query1 = "INSERT INTO lams_workspace_folder(name, user_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?);";
+          ptmt1 = conn.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
+          ptmt1.setString(1, "" + ldapOrg);
+          ptmt1.setInt(2, 9);
+          ptmt1.setDate(3, sqlDate);
+          ptmt1.setDate(4, sqlDate);
+          ptmt1.setInt(5, 1);
+          ptmt1.executeUpdate();
+          int w1 = -1;
+          ResultSet rs1 = ptmt1.getGeneratedKeys();
+          if (rs1 != null) {
+                rs1.next();
+                w1 = rs1.getInt(1);
+          }
+          log.warn("w1 = " + w1);
+          log.warn(query1);
+
+          String query2 = "INSERT INTO lams_workspace_folder(parent_folder_id, name, user_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?);";
+          ptmt2 = conn.prepareStatement(query2, Statement.RETURN_GENERATED_KEYS);
+          ptmt2.setInt(1, w1);
+          // ptmt2.setString(2, "??t??es? ??????????");
+          ptmt2.setString(2, Integer.toString(userId));
+          ptmt2.setInt(3, 9);
+          ptmt2.setDate(4, sqlDate);
+          ptmt2.setDate(5, sqlDate);
+          ptmt2.setInt(6, 2);
+          ptmt2.executeUpdate();
+          int w2 = -1;
+          ResultSet rs2 = ptmt2.getGeneratedKeys();
+          if (rs2 != null) {
+                rs2.next();
+                w2 = rs2.getInt(1);
+          }
+          log.warn("w2 = " + w2);
+          log.warn(query2);
+
+          String query3 = "INSERT INTO lams_workspace(default_fld_id, def_run_seq_fld_id, name) VALUES(?,?,?);";
+          ptmt3 = conn.prepareStatement(query3, Statement.RETURN_GENERATED_KEYS);
+          ptmt3.setInt(1, w1);
+          ptmt3.setInt(2, w2);
+          ptmt3.setString(3, "" + ldapOrg);
+          ptmt3.executeUpdate();
+          int w3 = -1;
+          ResultSet rs3 = ptmt3.getGeneratedKeys();
+          if (rs3 != null) {
+                rs3.next();
+                w3 = rs3.getInt(1);
+          }
+          log.warn("w3 = " + w3);
+          log.warn(query3);
+
+
+          String queryString = "INSERT INTO lams_organisation(name, description, create_date, created_by, organisation_state_id, admin_add_new_users, admin_browse_all_users, admin_change_status, admin_create_guest, enable_course_notifications, enable_monitor_gradebook, enable_learner_gradebook, parent_organisation_id, organisation_type_id, workspace_id, locale_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+                        ptmt = conn.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
+                        ptmt.setString(1, "" + ldapOrg);
+                        ptmt.setString(2, "Added by LDAPService");
+                        ptmt.setDate(3, sqlDate);
+                        ptmt.setInt(4, 9);
+                        ptmt.setInt(5, 1);
+                        ptmt.setInt(6, 0);
+                        ptmt.setInt(7, 1);
+                        ptmt.setInt(8, 1);
+                        ptmt.setInt(8, 1);
+                        ptmt.setInt(9, 1);
+                        ptmt.setInt(10, 1);
+                        ptmt.setInt(11, 1);
+                        ptmt.setInt(12, 1);
+                        ptmt.setInt(13, 1);
+                        ptmt.setInt(14, 2);
+                        ptmt.setInt(15, w3);
+                        ptmt.setInt(16, 17);
+
+                        ptmt.executeUpdate();
+
+                        orgId = -1;
+                        ResultSet rs = ptmt.getGeneratedKeys();
+                        if (rs != null) {
+                           rs.next();
+                           orgId = rs.getInt(1);
+                        }
+                        log.warn("orgId = " + orgId);
+                        log.warn(queryString);
+
+                } catch (SQLException e) {
+                        e.printStackTrace();
+                } finally {
+                        try {
+                                if (ptmt != null)
+                                        ptmt.close();
+                                if (conn != null)
+                                        conn.close();
+                        } catch (SQLException e) {
+                                e.printStackTrace();
+                        } catch (Exception e) {
+                                e.printStackTrace();
+                        }
+
+                }
+        return addLDAPUser(attrs, userId);
     }
 
     // get list of LAMS role ids from list of ldap roles
