@@ -380,42 +380,6 @@ public class LdapService implements ILdapService {
       java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
 
       try {
-          /*String query1 = "INSERT INTO lams_workspace_folder(name, user_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?);";
-          ptmt1 = conn.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
-          ptmt1.setString(1, "" + ldapOrg);
-          ptmt1.setInt(2, userId);
-          ptmt1.setDate(3, sqlDate);
-          ptmt1.setDate(4, sqlDate);
-          ptmt1.setInt(5, 1);
-          ptmt1.executeUpdate();
-          int w1 = -1;
-          ResultSet rs1 = ptmt1.getGeneratedKeys();
-          if (rs1 != null) {
-                rs1.next();
-                w1 = rs1.getInt(1);
-          }
-          log.warn("w1 = " + w1);
-          log.warn(query1);*/
-
-          /*String query2 = "INSERT INTO lams_workspace_folder(parent_folder_id, name, user_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?);";
-          ptmt2 = conn.prepareStatement(query2, Statement.RETURN_GENERATED_KEYS);
-          ptmt2.setInt(1, w1);
-          // ptmt2.setString(2, "??t??es? ??????????");
-          ptmt2.setString(2, Integer.toString(userId));
-          ptmt2.setInt(3, userId);
-          ptmt2.setDate(4, sqlDate);
-          ptmt2.setDate(5, sqlDate);
-          ptmt2.setInt(6, 2);
-          ptmt2.executeUpdate();
-          int w2 = -1;
-          ResultSet rs2 = ptmt2.getGeneratedKeys();
-          if (rs2 != null) {
-                rs2.next();
-                w2 = rs2.getInt(1);
-          }
-          log.warn("w2 = " + w2);
-          log.warn(query2);*/
-
           /*String query3 = "INSERT INTO lams_workspace(default_fld_id, def_run_seq_fld_id, name) VALUES(?,?,?);";
           ptmt3 = conn.prepareStatement(query3, Statement.RETURN_GENERATED_KEYS);
           ptmt3.setInt(1, w1);
@@ -460,8 +424,45 @@ public class LdapService implements ILdapService {
              rs.next();
              orgId = rs.getInt(1);
           }
-          log.warn("orgId = " + orgId);
-          log.warn(queryString);
+          // log.warn("orgId = " + orgId);
+          // log.warn(queryString);
+
+          String query1 = "INSERT INTO lams_workspace_folder(name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?);";
+          ptmt1 = conn.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
+          ptmt1.setString(1, "" + ldapOrg);
+          ptmt1.setInt(2, userId);
+          ptmt1.setInt(3, orgId);
+          ptmt1.setDate(4, sqlDate);
+          ptmt1.setDate(5, sqlDate);
+          ptmt1.setInt(6, 1);
+          ptmt1.executeUpdate();
+          int w1 = -1;
+          ResultSet rs1 = ptmt1.getGeneratedKeys();
+          if (rs1 != null) {
+                rs1.next();
+                w1 = rs1.getInt(1);
+          }
+          // log.warn("w1 = " + w1);
+          // log.warn(query1);
+
+          String query2 = "INSERT INTO lams_workspace_folder(parent_folder_id, name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?,?);";
+          ptmt2 = conn.prepareStatement(query2, Statement.RETURN_GENERATED_KEYS);
+          ptmt2.setInt(1, w1);
+          ptmt2.setString(2, "" + ldapOrg);
+          ptmt2.setInt(3, userId);
+          ptmt2.setInt(4, orgId);
+          ptmt2.setDate(5, sqlDate);
+          ptmt2.setDate(6, sqlDate);
+          ptmt2.setInt(7, 2);
+          ptmt2.executeUpdate();
+          int w2 = -1;
+          ResultSet rs2 = ptmt2.getGeneratedKeys();
+          if (rs2 != null) {
+                rs2.next();
+                w2 = rs2.getInt(1);
+          }
+          // log.warn("w2 = " + w2);
+          // log.warn(query2);
       } catch (SQLException e) {
           e.printStackTrace();
       } catch (Exception e) {
