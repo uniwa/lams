@@ -558,6 +558,10 @@ public class LdapService implements ILdapService {
 
     @Override
     public BulkUpdateResultDTO bulkUpdate() {
+        return this.bulkUpdate("*");
+    }
+
+    public BulkUpdateResultDTO bulkUpdate(String bulkFilter) {
 	// setup ldap context
 	Properties env = new Properties();
 	env.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -586,7 +590,7 @@ public class LdapService implements ILdapService {
 
 	// we can assume the filter will only have one variable since we only
 	// have one input: the username
-	filter = filter.replaceAll("\\{0\\}", "*");
+	filter = filter.replaceAll("\\{0\\}", bulkFilter);
 
 	// get page size
 	int pageSize = 100;
