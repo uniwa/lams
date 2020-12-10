@@ -15,5 +15,9 @@
 </ul>
 <br />
 <script>
-    window.location = '/';
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    } else {
+        window.location = '/';
+    }
 </script>
