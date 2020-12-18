@@ -33,7 +33,7 @@ RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
     && git checkout b0aa5ff530f717d8edb5a08bc52336837c1e83c8
 
-ADD  ./lams/lams_central/conf/security/Owasp.CsrfGuard.properties /app/lams/lams_central/conf/security/Owasp.CsrfGuard.properties
+ADD  ./lams_central/conf/security/Owasp.CsrfGuard.properties /app/lams/lams_central/conf/security/Owasp.CsrfGuard.properties
 
 ADD ./lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java /app/lams/lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java
 
