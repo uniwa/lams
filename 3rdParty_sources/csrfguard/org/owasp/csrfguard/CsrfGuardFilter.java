@@ -49,6 +49,7 @@ public final class CsrfGuardFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
         //maybe the short circuit to disable is set
+        // if (!CsrfGuard.getInstance().isEnabled()) {
         if (true) { // DISABLE BECAUSE THIS DOES NOT WORK FOR USERS OTHER THAN SYSADMIN
             filterChain.doFilter(request, response);
             return;
