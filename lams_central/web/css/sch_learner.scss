@@ -23,3 +23,12 @@
 #editCourse { /* Επεξεργασία μαθήματος */
     display: none;
 }
+
+a[href="https://lams.sch.gr/lams/admin/orgmanage.do?org=1"] {
+    pointer-events: none;
+    cursor: not-allowed;
+    filter: alpha(opacity=65);
+    opacity: .65;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
