@@ -33,3 +33,11 @@ services:
         environment:
             PMA_HOST: 'mysql'
             MYSQL_USERNAME: root
+    phpmyadmin_production:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - 8182:80
+        environment:
+            PMA_HOST: 'host.docker.internal'
+            PMA_PORT: '3317'
+            MYSQL_USERNAME: root
