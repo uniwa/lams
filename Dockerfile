@@ -53,6 +53,10 @@ ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_centra
 ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/favicon/lams/favicon.ico
 ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app/lams/lams_central/conf/language/lams/ApplicationResources_el_GR.properties
 
+ADD ./lams_admin/web /tmp/lams_admin_web
+RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
+    && cd /app/lams/lams_admin && ant sass.compile
+
 ADD ./lams_central/web /tmp/lams_central_web
 RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams_central_web \
     && cd /app/lams/lams_central && ant sass.compile
