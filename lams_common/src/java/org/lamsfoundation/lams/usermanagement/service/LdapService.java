@@ -34,6 +34,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.Control;
@@ -312,64 +313,90 @@ public class LdapService implements ILdapService {
 	List<String> ldapRoles = getAttributeStrings(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ROLES_ATTR)));
 	// get column name of lams_organisation to match ldapOrgAttr to
 	String orgField = Configuration.get(ConfigurationKeys.LDAP_ORG_FIELD);
+	String lField = getSingleAttributeString(attrs.get("l"));
 
 	boolean isAddingUserSuccessful = true;
 	if ((ldapOrgs != null) && (ldapRoles != null) && (orgField != null)) {
 	    // get list of possible matching organisations
-	    for (String ldapOrg : ldapOrgs) {
-		log.debug("Looking for organisation to add ldap user to...");
-		List orgList = service.findByProperty(Organisation.class, orgField, ldapOrg);
-		if ((orgList != null) && !orgList.isEmpty()) {
-		    Organisation org = null;
-		    if (orgList.size() == 1) {
-			org = (Organisation) orgList.get(0);
-		    } else if (orgList.size() > 1) {
-			// if there are multiple orgs, select the one that is
-			// active, if there is one
-			HashMap<String, Object> properties = new HashMap<String, Object>();
-			properties.put(orgField, ldapOrg);
-			properties.put("organisationState.organisationStateId", OrganisationState.ACTIVE);
-			orgList = service.findByProperties(Organisation.class, properties);
-			if (orgList.size() == 1) {
-			    org = (Organisation) orgList.get(0);
-			} else {
-			    log.warn("More than one LAMS organisation found with the " + orgField + ": " + ldapOrg);
-			    isAddingUserSuccessful = false;
-			    break;
-			}
-		    }
-
-		    // now convert the roles to lams roles and add the user to the org
-		    List<String> roleIds = getRoleIds(ldapRoles);
-		    if ((roleIds != null) && !roleIds.isEmpty()) {
-			service.setRolesForUserOrganisation(user, org.getOrganisationId(), roleIds);
-		    } else {
-			log.warn("Couldn't map any roles from attribute: "
-				+ Configuration.get(ConfigurationKeys.LDAP_ROLES_ATTR));
-			isAddingUserSuccessful = false;
-		    }
-
-		    // if the user is a member of any other groups, remove them
-		    if (Configuration.getAsBoolean(ConfigurationKeys.LDAP_ONLY_ONE_ORG)) {
-			service.removeUserFromOtherGroups(userId, org.getOrganisationId());
-			break;
-		    }
-		} else {
-		    log.warn("No LAMS organisations found with the " + orgField + ": " + ldapOrg);
-		    try {
-                isAddingUserSuccessful = createOrgs(dataSource.getConnection(), ldapOrg, attrs, userId);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
+        for (String ldapOrgCn : ldapOrgs) {
+            String ldapOrg = null;
+            if (ldapOrgCn.indexOf("=") != -1 && ldapOrgCn.indexOf(",") != -1) {
+                // Get the uid
+                ldapOrg = ldapOrgCn.substring(ldapOrgCn.indexOf("=")+1,ldapOrgCn.indexOf(","));
+            } else {
+                ldapOrg = ldapOrgCn;
             }
-		}
+
+            log.debug("Looking for organisation to add ldap user to (ldapOrg: " + ldapOrg + ", l: " + lField + ", ou: " + getSingleAttributeString(attrs.get("ou")) + ")...");
+            Attributes ldapOrgAttrs = null;
+            if (lField.equals(ldapOrgCn)) {
+                // Main org
+                ldapOrgAttrs = new BasicAttributes();
+                ldapOrgAttrs.put("sn", getSingleAttributeString(attrs.get("ou")));
+            } else {
+                // Secondary org
+                ldapOrgAttrs = getLDAPOrganization(ldapOrg);
+            }
+            List orgList = service.findByProperty(Organisation.class, orgField, ldapOrg);
+            if (ldapOrgAttrs != null && (orgList == null || orgList.isEmpty())) {
+                log.debug("Org not found by " + orgField + ". Searching by name: " + getSingleAttributeString(ldapOrgAttrs.get("sn")));
+                orgList = service.findByProperty(Organisation.class, "name", getSingleAttributeString(ldapOrgAttrs.get("sn")));
+            }
+            if ((orgList != null) && !orgList.isEmpty()) {
+                Organisation org = null;
+                if (orgList.size() == 1) {
+                    org = (Organisation) orgList.get(0);
+                } else if (orgList.size() > 1) {
+                    // if there are multiple orgs, select the one that is
+                    // active, if there is one
+                    HashMap<String, Object> properties = new HashMap<String, Object>();
+                    properties.put(orgField, ldapOrg);
+                    properties.put("organisationState.organisationStateId", OrganisationState.ACTIVE);
+                    orgList = service.findByProperties(Organisation.class, properties);
+                    if (orgList.size() == 1) {
+                        org = (Organisation) orgList.get(0);
+                    } else {
+                        log.warn("More than one LAMS organisation found with the " + orgField + ": " + ldapOrg);
+                        isAddingUserSuccessful = false;
+                        break;
+                    }
+                }
+
+                // now convert the roles to lams roles and add the user to the org
+                List<String> roleIds = getRoleIds(ldapRoles);
+                if ((roleIds != null) && !roleIds.isEmpty()) {
+                    service.setRolesForUserOrganisation(user, org.getOrganisationId(), roleIds);
+                } else {
+                    log.warn("Couldn't map any roles from attribute: "
+                        + Configuration.get(ConfigurationKeys.LDAP_ROLES_ATTR));
+                    isAddingUserSuccessful = false;
+                }
+
+                // if the user is a member of any other groups, remove them
+                if (Configuration.getAsBoolean(ConfigurationKeys.LDAP_ONLY_ONE_ORG)) {
+                    service.removeUserFromOtherGroups(userId, org.getOrganisationId());
+                    break;
+                }
+            } else {
+                log.warn("No LAMS organisations found with the " + orgField + ": " + ldapOrg);
+                if (ldapOrgAttrs != null) {
+                    try {
+                        isAddingUserSuccessful = createOrgs(dataSource.getConnection(), ldapOrg, attrs, ldapOrgAttrs, userId);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    log.warn("LAMS organisation not found in LDAP " + ldapOrg);
+                }
+            }
 	    }
 	}
 	return isAddingUserSuccessful;
     }
 
-    private boolean createOrgs(Connection conn, String ldapOrg, Attributes attrs, Integer userId) {
+    private boolean createOrgs(Connection conn, String ldapOrg, Attributes attrs, Attributes ldapOrgAttrs, Integer userId) {
       int orgId = -1;
       PreparedStatement ptmt = null;
       PreparedStatement ptmt1 = null;
@@ -395,26 +422,27 @@ public class LdapService implements ILdapService {
           log.warn("w3 = " + w3);
           log.warn(query3);*/
 
-          String queryString = "INSERT INTO lams_organisation(name, description, create_date, created_by, organisation_state_id, admin_add_new_users, admin_browse_all_users, admin_change_status, admin_create_guest, enable_course_notifications, enable_learner_gradebook, parent_organisation_id, organisation_type_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+          String queryString = "INSERT INTO lams_organisation(name, code, description, create_date, created_by, organisation_state_id, admin_add_new_users, admin_browse_all_users, admin_change_status, admin_create_guest, enable_course_notifications, enable_learner_gradebook, parent_organisation_id, organisation_type_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
           ptmt = conn.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
-          ptmt.setString(1, "" + ldapOrg);
-          ptmt.setString(2, "Added by LDAPService");
-          ptmt.setDate(3, sqlDate);
-          ptmt.setInt(4, 9);
-          ptmt.setInt(5, 1);
-          ptmt.setInt(6, 0);
-          ptmt.setInt(7, 1);
+          ptmt.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
+          ptmt.setString(2, "" + ldapOrg);
+          ptmt.setString(3, "Added by LDAPService");
+          ptmt.setDate(4, sqlDate);
+          ptmt.setInt(5, 9);
+          ptmt.setInt(6, 1);
+          ptmt.setInt(7, 0);
           ptmt.setInt(8, 1);
           ptmt.setInt(9, 1);
           ptmt.setInt(10, 1);
           ptmt.setInt(11, 1);
           ptmt.setInt(12, 1);
-          // ptmt.setInt(13, 1);
-          // ptmt.setInt(13, 1);
-          ptmt.setInt(13, 2);
-          // ptmt.setInt(15, w3);
-          // ptmt.setInt(16, 17);
+          ptmt.setInt(13, 1);
+          // ptmt.setInt(14, 1);
+          // ptmt.setInt(15, 1);
+          ptmt.setInt(14, 2);
+          // ptmt.setInt(16, w3);
+          // ptmt.setInt(17, 17);
 
           ptmt.executeUpdate();
 
@@ -429,7 +457,7 @@ public class LdapService implements ILdapService {
 
           String query1 = "INSERT INTO lams_workspace_folder(name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?);";
           ptmt1 = conn.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
-          ptmt1.setString(1, "" + ldapOrg);
+          ptmt1.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
           ptmt1.setInt(2, userId);
           ptmt1.setInt(3, orgId);
           ptmt1.setDate(4, sqlDate);
@@ -448,7 +476,7 @@ public class LdapService implements ILdapService {
           String query2 = "INSERT INTO lams_workspace_folder(parent_folder_id, name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?,?);";
           ptmt2 = conn.prepareStatement(query2, Statement.RETURN_GENERATED_KEYS);
           ptmt2.setInt(1, w1);
-          ptmt2.setString(2, "" + ldapOrg);
+          ptmt2.setString(2, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
           ptmt2.setInt(3, userId);
           ptmt2.setInt(4, orgId);
           ptmt2.setDate(5, sqlDate);
@@ -561,26 +589,61 @@ public class LdapService implements ILdapService {
         return this.bulkUpdate("*");
     }
 
-    public BulkUpdateResultDTO bulkUpdate(String bulkFilter) {
-        // setup ldap context
-        Properties env = new Properties();
-        env.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.setProperty(Context.SECURITY_AUTHENTICATION,
-            Configuration.get(ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION));
-        // make java ldap provider return 10 results at a time instead of
-        // default 1
-        env.setProperty(Context.BATCHSIZE, "10");
-        env.setProperty(Context.PROVIDER_URL, Configuration.get(ConfigurationKeys.LDAP_PROVIDER_URL));
-        String securityProtocol = Configuration.get(ConfigurationKeys.LDAP_SECURITY_PROTOCOL);
-        if (StringUtils.equals("ssl", securityProtocol)) {
-            env.setProperty(Context.SECURITY_PROTOCOL, securityProtocol);
+    private Attributes getLDAPOrganization(String uid) {
+        Properties env = getEnv();
+
+        // get base DN to search on
+        String baseDN = Configuration.get(ConfigurationKeys.LDAP_BASE_DN);
+
+        if (uid == "people") {
+            return null;
         }
 
-        // setup initial bind user credentials if configured
-        if (StringUtils.isNotBlank(Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN))) {
-            env.setProperty(Context.SECURITY_PRINCIPAL, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN));
-            env.setProperty(Context.SECURITY_CREDENTIALS, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_PASSWORD));
+        // get search filter
+        String filter = "(&(uid={0})(|(umdObject=Account)(umdObject=Personel)))";
+
+        // set search to subtree of base dn
+        SearchControls ctrl = new SearchControls();
+        ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        List<String> messages = new ArrayList<String>();
+
+        try {
+            // open LDAP connection
+            LdapContext ctx = null;
+            try {
+                ctx = new InitialLdapContext(env, null);
+            } catch (Exception e) {
+                messages.add("Error creating control: " + e.getMessage());
+                log.error(e, e);
+            }
+
+            // perform ldap search, in batches
+            log.info("Searching for organization " + baseDN + " using filter " + filter + " with arg " + uid);
+            Object[] filterArgs = { uid };
+            NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, filterArgs, ctrl);
+            while (results.hasMore()) {
+                try {
+                    SearchResult result = results.next();
+                    return result.getAttributes();
+                } catch (Exception e) {
+                    // continue processing
+                    messages.add("LDAP exception: " + e.getMessage());
+                }
+            }
+        } catch (NamingException e) {
+            messages.add("Error while processing " + baseDN + ": " + e.getMessage());
+            log.error(e, e);
+        } catch (Exception e) {
+            messages.add("Unknown error: " + e.getMessage());
+            log.error(e, e);
         }
+
+        return null;
+    }
+
+    public BulkUpdateResultDTO bulkUpdate(String bulkFilter) {
+        Properties env = getEnv();
 
         // get base DN to search on
         String baseDN = Configuration.get(ConfigurationKeys.LDAP_BASE_DN);
@@ -633,39 +696,39 @@ public class LdapService implements ILdapService {
             NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, ctrl);
             while (results.hasMore()) {
                 try {
-                SearchResult result = results.next();
-                Attributes attrs = result.getAttributes();
+                    SearchResult result = results.next();
+                    Attributes attrs = result.getAttributes();
 
-                // add or update this user to LAMS
-                boolean disabled = getDisabledBoolean(attrs);
-                String login = getSingleAttributeString(
-                    attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)));
-                if ((login != null) && (login.trim().length() > 0)) {
-                    int code = bulkUpdateLDAPUser(login, attrs, disabled);
-                    switch (code) {
-                    case BULK_UPDATE_CREATED:
-                        createdUsers++;
-                        break;
-                    case BULK_UPDATE_UPDATED:
-                        updatedUsers++;
-                        break;
-                    case BULK_UPDATE_DISABLED:
-                        disabledUsers++;
-                        break;
+                    // add or update this user to LAMS
+                    boolean disabled = getDisabledBoolean(attrs);
+                    String login = getSingleAttributeString(
+                        attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)));
+                    if ((login != null) && (login.trim().length() > 0)) {
+                        int code = bulkUpdateLDAPUser(login, attrs, disabled);
+                        switch (code) {
+                        case BULK_UPDATE_CREATED:
+                            createdUsers++;
+                            break;
+                        case BULK_UPDATE_UPDATED:
+                            updatedUsers++;
+                            break;
+                        case BULK_UPDATE_DISABLED:
+                            disabledUsers++;
+                            break;
+                        }
+                    } else {
+                        log.error("Couldn't find login attribute for user using attribute name: "
+                            + Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)
+                            + ".  Dumping attributes...");
+                        NamingEnumeration enumAttrs = attrs.getAll();
+                        while (enumAttrs.hasMoreElements()) {
+                        log.error(enumAttrs.next());
+                        }
                     }
-                } else {
-                    log.error("Couldn't find login attribute for user using attribute name: "
-                        + Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)
-                        + ".  Dumping attributes...");
-                    NamingEnumeration enumAttrs = attrs.getAll();
-                    while (enumAttrs.hasMoreElements()) {
-                    log.error(enumAttrs.next());
-                    }
-                }
                 } catch (Exception e) {
-                // continue processing
-                messages.add(
-                    "Error processing context result number " + contextResults + ": " + e.getMessage());
+                    // continue processing
+                    messages.add(
+                        "Error processing context result number " + contextResults + ": " + e.getMessage());
                 }
 
                 contextResults++;
@@ -742,6 +805,30 @@ public class LdapService implements ILdapService {
             }
         }
         return null;
+    }
+
+    private Properties getEnv() {
+        // setup ldap context
+        Properties env = new Properties();
+        env.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.setProperty(Context.SECURITY_AUTHENTICATION,
+            Configuration.get(ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION));
+        // make java ldap provider return 10 results at a time instead of
+        // default 1
+        env.setProperty(Context.BATCHSIZE, "10");
+        env.setProperty(Context.PROVIDER_URL, Configuration.get(ConfigurationKeys.LDAP_PROVIDER_URL));
+        String securityProtocol = Configuration.get(ConfigurationKeys.LDAP_SECURITY_PROTOCOL);
+        if (StringUtils.equals("ssl", securityProtocol)) {
+            env.setProperty(Context.SECURITY_PROTOCOL, securityProtocol);
+        }
+
+        // setup initial bind user credentials if configured
+        if (StringUtils.isNotBlank(Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN))) {
+            env.setProperty(Context.SECURITY_PRINCIPAL, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN));
+            env.setProperty(Context.SECURITY_CREDENTIALS, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_PASSWORD));
+        }
+
+        return env;
     }
 
     // ---------------------------------------------------------------------
