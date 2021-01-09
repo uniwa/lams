@@ -16,6 +16,10 @@
     display: none;
 }
 
-#editProfileButton, #editPortraitButton, #viewPolicies {
+#editProfileButton, #editPortraitButton, #viewPolicies {  /* Επεξεργασία προφίλ */
+    display: none;
+}
+
+#editCourse { /* Επεξεργασία μαθήματος */
     display: none;
 }
