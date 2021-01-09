@@ -72,7 +72,7 @@ public class LDAPAuthenticator {
     }
 
     public boolean authenticate(String userName, String credential) {
-        Properties env = this.getEnv();
+        Properties env = getEnv();
         String login = "";
         String dn = "";
         boolean isValid = false;
@@ -91,27 +91,27 @@ public class LDAPAuthenticator {
             Object[] filterArgs = { userName };
             NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, filterArgs, ctrl);
             while (results.hasMore()) {
-            SearchResult result = results.next();
-            if (LDAPAuthenticator.log.isDebugEnabled()) {
-                LDAPAuthenticator.log.debug("Found matching object. Name: " + result.getName() + ". Namespace: "
-                    + result.getNameInNamespace());
-            }
-            Attributes attrs = result.getAttributes();
-            Attribute attr = attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR));
-            login = LDAPAuthenticator.ldapService.getSingleAttributeString(attr);
-            if (attr != null) {
-                Object attrValue = attr.get();
-                if (attrValue != null) {
-                login = attrValue.toString();
+                SearchResult result = results.next();
+                if (LDAPAuthenticator.log.isDebugEnabled()) {
+                    LDAPAuthenticator.log.debug("Found matching object. Name: " + result.getName() + ". Namespace: "
+                        + result.getNameInNamespace());
                 }
-            }
-            if (StringUtils.equals(login, userName)) {
-                // now we can try to authenticate
-                dn = result.getNameInNamespace();
-                this.attrs = attrs;
-                ctx.close();
-                break;
-            }
+                Attributes attrs = result.getAttributes();
+                Attribute attr = attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR));
+                login = LDAPAuthenticator.ldapService.getSingleAttributeString(attr);
+                if (attr != null) {
+                    Object attrValue = attr.get();
+                    if (attrValue != null) {
+                    login = attrValue.toString();
+                    }
+                }
+                if (StringUtils.equals(login, userName)) {
+                    // now we can try to authenticate
+                    dn = result.getNameInNamespace();
+                    this.attrs = attrs;
+                    ctx.close();
+                    break;
+                }
             }
             if (StringUtils.isBlank(login)) {
             LDAPAuthenticator.log.error("No LDAP user found with name: " + userName
@@ -198,6 +198,8 @@ public class LDAPAuthenticator {
             env.setProperty(Context.SECURITY_PRINCIPAL, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN));
             env.setProperty(Context.SECURITY_CREDENTIALS, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_PASSWORD));
         }
+
+        return env;
     }
 
     public Attributes getAttrs() {
