@@ -133,7 +133,7 @@ CKEDITOR.config.enterMode = 'div';
 CKEDITOR.plugins.addExternal('wikilink', CKEDITOR.basePath + '../tool/lawiki10/wikilink/', 'plugin.js');
 CKEDITOR.config.extraPlugins = 'wikilink,jlatexmath,image2,html5audio,confighelper,bootstrapTabs,bootpanel,bootsnippets';
 CKEDITOR.config.enterMode = CKEDITOR.ENTER_DIV; 
-CKEDITOR.config.removePlugins = 'elementspath,about,specialchar,contextmenu,tabletools,liststyle';
+CKEDITOR.config.removePlugins = 'elementspath,about,specialchar,contextmenu,tabletools,tableselection,liststyle';
 CKEDITOR.config.allowedContent = true;
 CKEDITOR.config.toolbarCanCollapse = true;
 CKEDITOR.config.embed_provider = '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}';//default URL for 'embed' plugin
