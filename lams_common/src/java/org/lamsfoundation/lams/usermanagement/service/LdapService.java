@@ -483,77 +483,77 @@ public class LdapService implements ILdapService {
 
     // get list of LAMS role ids from list of ldap roles
     private List<String> getRoleIds(List<String> ldapRoles) {
-	if (ldapRoles != null) {
-	    ArrayList<String> roleIds = new ArrayList<String>();
-	    for (String role : ldapRoles) {
-		if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_LEARNER_MAP), role)
-			&& !roleIds.contains(Role.ROLE_LEARNER.toString())) {
-		    roleIds.add(Role.ROLE_LEARNER.toString());
-		}
-		if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_MONITOR_MAP), role)
-			&& !roleIds.contains(Role.ROLE_MONITOR.toString())) {
-		    roleIds.add(Role.ROLE_MONITOR.toString());
-		}
-		if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_AUTHOR_MAP), role)
-			&& !roleIds.contains(Role.ROLE_AUTHOR.toString())) {
-		    roleIds.add(Role.ROLE_AUTHOR.toString());
-		}
-		if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_GROUP_MANAGER_MAP), role)
-			&& !roleIds.contains(Role.ROLE_GROUP_MANAGER.toString())) {
-		    roleIds.add(Role.ROLE_GROUP_MANAGER.toString());
-		}
-	    }
-	    return roleIds;
-	}
-	return null;
+        if (ldapRoles != null) {
+            ArrayList<String> roleIds = new ArrayList<String>();
+            for (String role : ldapRoles) {
+            if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_LEARNER_MAP), role)
+                && !roleIds.contains(Role.ROLE_LEARNER.toString())) {
+                roleIds.add(Role.ROLE_LEARNER.toString());
+            }
+            if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_MONITOR_MAP), role)
+                && !roleIds.contains(Role.ROLE_MONITOR.toString())) {
+                roleIds.add(Role.ROLE_MONITOR.toString());
+            }
+            if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_AUTHOR_MAP), role)
+                && !roleIds.contains(Role.ROLE_AUTHOR.toString())) {
+                roleIds.add(Role.ROLE_AUTHOR.toString());
+            }
+            if (isRoleInList(Configuration.get(ConfigurationKeys.LDAP_GROUP_MANAGER_MAP), role)
+                && !roleIds.contains(Role.ROLE_GROUP_MANAGER.toString())) {
+                roleIds.add(Role.ROLE_GROUP_MANAGER.toString());
+            }
+            }
+            return roleIds;
+        }
+        return null;
     }
 
     private boolean isRoleInList(String list, String role) {
-	if ((list != null) && (role != null)) {
-	    String[] array = list.split(";");
-	    for (String s : array) {
-		if (role.contains(s)) {
-		    return true;
-		}
-	    }
-	}
-	return false;
+        if ((list != null) && (role != null)) {
+            String[] array = list.split(";");
+            for (String s : array) {
+            if (role.contains(s)) {
+                return true;
+            }
+            }
+        }
+        return false;
     }
 
     // get the multiple values of an ldap attribute
     private List<String> getAttributeStrings(Attribute attr) {
-	try {
-	    ArrayList<String> attrValues = new ArrayList<String>();
-	    if (attr != null) {
-		NamingEnumeration attrEnum = attr.getAll();
-		while (attrEnum.hasMore()) {
-		    Object attrValue = attrEnum.next();
-		    if (attrValue != null) {
-			attrValues.add(attrValue.toString());
-		    }
-		}
-		return attrValues;
-	    }
-	} catch (NamingException e) {
-	    log.error("===> Naming exception occurred: " + e.getMessage());
-	}
-	return null;
+        try {
+            ArrayList<String> attrValues = new ArrayList<String>();
+            if (attr != null) {
+            NamingEnumeration attrEnum = attr.getAll();
+            while (attrEnum.hasMore()) {
+                Object attrValue = attrEnum.next();
+                if (attrValue != null) {
+                attrValues.add(attrValue.toString());
+                }
+            }
+            return attrValues;
+            }
+        } catch (NamingException e) {
+            log.error("===> Naming exception occurred: " + e.getMessage());
+        }
+        return null;
     }
 
     // get the single (string) value of an ldap attribute
     @Override
     public String getSingleAttributeString(Attribute attr) {
-	try {
-	    if (attr != null) {
-		Object attrValue = attr.get();
-		if (attrValue != null) {
-		    return attrValue.toString();
-		}
-	    }
-	} catch (NamingException e) {
-	    log.error("===> Naming exception occurred: " + e.getMessage());
-	}
-	return null;
+        try {
+            if (attr != null) {
+            Object attrValue = attr.get();
+            if (attrValue != null) {
+                return attrValue.toString();
+            }
+            }
+        } catch (NamingException e) {
+            log.error("===> Naming exception occurred: " + e.getMessage());
+        }
+        return null;
     }
 
     @Override
@@ -562,186 +562,186 @@ public class LdapService implements ILdapService {
     }
 
     public BulkUpdateResultDTO bulkUpdate(String bulkFilter) {
-	// setup ldap context
-	Properties env = new Properties();
-	env.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-	env.setProperty(Context.SECURITY_AUTHENTICATION,
-		Configuration.get(ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION));
-	// make java ldap provider return 10 results at a time instead of
-	// default 1
-	env.setProperty(Context.BATCHSIZE, "10");
-	env.setProperty(Context.PROVIDER_URL, Configuration.get(ConfigurationKeys.LDAP_PROVIDER_URL));
-	String securityProtocol = Configuration.get(ConfigurationKeys.LDAP_SECURITY_PROTOCOL);
-	if (StringUtils.equals("ssl", securityProtocol)) {
-	    env.setProperty(Context.SECURITY_PROTOCOL, securityProtocol);
-	}
+        // setup ldap context
+        Properties env = new Properties();
+        env.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.setProperty(Context.SECURITY_AUTHENTICATION,
+            Configuration.get(ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION));
+        // make java ldap provider return 10 results at a time instead of
+        // default 1
+        env.setProperty(Context.BATCHSIZE, "10");
+        env.setProperty(Context.PROVIDER_URL, Configuration.get(ConfigurationKeys.LDAP_PROVIDER_URL));
+        String securityProtocol = Configuration.get(ConfigurationKeys.LDAP_SECURITY_PROTOCOL);
+        if (StringUtils.equals("ssl", securityProtocol)) {
+            env.setProperty(Context.SECURITY_PROTOCOL, securityProtocol);
+        }
 
-	// setup initial bind user credentials if configured
-	if (StringUtils.isNotBlank(Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN))) {
-	    env.setProperty(Context.SECURITY_PRINCIPAL, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN));
-	    env.setProperty(Context.SECURITY_CREDENTIALS, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_PASSWORD));
-	}
+        // setup initial bind user credentials if configured
+        if (StringUtils.isNotBlank(Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN))) {
+            env.setProperty(Context.SECURITY_PRINCIPAL, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_DN));
+            env.setProperty(Context.SECURITY_CREDENTIALS, Configuration.get(ConfigurationKeys.LDAP_BIND_USER_PASSWORD));
+        }
 
-	// get base DN to search on
-	String baseDN = Configuration.get(ConfigurationKeys.LDAP_BASE_DN);
+        // get base DN to search on
+        String baseDN = Configuration.get(ConfigurationKeys.LDAP_BASE_DN);
 
-	// get search filter
-	String filter = Configuration.get(ConfigurationKeys.LDAP_SEARCH_FILTER);
+        // get search filter
+        String filter = Configuration.get(ConfigurationKeys.LDAP_SEARCH_FILTER);
 
-	// we can assume the filter will only have one variable since we only
-	// have one input: the username
-	filter = filter.replaceAll("\\{0\\}", bulkFilter);
+        // we can assume the filter will only have one variable since we only
+        // have one input: the username
+        filter = filter.replaceAll("\\{0\\}", bulkFilter);
 
-	// get page size
-	int pageSize = 100;
-	try {
-	    pageSize = new Integer(Configuration.get(ConfigurationKeys.LDAP_SEARCH_RESULTS_PAGE_SIZE)).intValue();
-	} catch (Exception e) {
-	    log.error("Couldn't read " + ConfigurationKeys.LDAP_SEARCH_RESULTS_PAGE_SIZE
-		    + ", using default page size of 100.");
-	}
+        // get page size
+        int pageSize = 100;
+        try {
+            pageSize = new Integer(Configuration.get(ConfigurationKeys.LDAP_SEARCH_RESULTS_PAGE_SIZE)).intValue();
+        } catch (Exception e) {
+            log.error("Couldn't read " + ConfigurationKeys.LDAP_SEARCH_RESULTS_PAGE_SIZE
+                + ", using default page size of 100.");
+        }
 
-	int totalResults = 0;
-	int createdUsers = 0;
-	int updatedUsers = 0;
-	int disabledUsers = 0;
-	List<String> messages = new ArrayList<String>();
+        int totalResults = 0;
+        int createdUsers = 0;
+        int updatedUsers = 0;
+        int disabledUsers = 0;
+        List<String> messages = new ArrayList<String>();
 
-	int contextResults = 0;
-	try {
-	    // open LDAP connection
-	    LdapContext ctx = null;
-	    try {
-		ctx = new InitialLdapContext(env, null);
-		// ask ldap server to return results in pages of PAGE_SIZE,
-		// if supported
-		ctx.setRequestControls(new Control[] { new PagedResultsControl(pageSize, Control.NONCRITICAL) });
-	    } catch (Exception e) {
-		messages.add("Error creating control: " + e.getMessage());
-		log.error(e, e);
-	    }
+        int contextResults = 0;
+        try {
+            // open LDAP connection
+            LdapContext ctx = null;
+            try {
+            ctx = new InitialLdapContext(env, null);
+            // ask ldap server to return results in pages of PAGE_SIZE,
+            // if supported
+            ctx.setRequestControls(new Control[] { new PagedResultsControl(pageSize, Control.NONCRITICAL) });
+            } catch (Exception e) {
+            messages.add("Error creating control: " + e.getMessage());
+            log.error(e, e);
+            }
 
-	    // perform ldap search, in batches
-	    log.info("Searching " + baseDN + " using filter " + filter);
-	    byte[] cookie = null;
-	    do {
-		// set search to subtree of base dn
-		SearchControls ctrl = new SearchControls();
-		ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            // perform ldap search, in batches
+            log.info("Searching " + baseDN + " using filter " + filter);
+            byte[] cookie = null;
+            do {
+            // set search to subtree of base dn
+            SearchControls ctrl = new SearchControls();
+            ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-		// do the search for all ldap users
-		NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, ctrl);
-		while (results.hasMore()) {
-		    try {
-			SearchResult result = results.next();
-			Attributes attrs = result.getAttributes();
+            // do the search for all ldap users
+            NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, ctrl);
+            while (results.hasMore()) {
+                try {
+                SearchResult result = results.next();
+                Attributes attrs = result.getAttributes();
 
-			// add or update this user to LAMS
-			boolean disabled = getDisabledBoolean(attrs);
-			String login = getSingleAttributeString(
-				attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)));
-			if ((login != null) && (login.trim().length() > 0)) {
-			    int code = bulkUpdateLDAPUser(login, attrs, disabled);
-			    switch (code) {
-				case BULK_UPDATE_CREATED:
-				    createdUsers++;
-				    break;
-				case BULK_UPDATE_UPDATED:
-				    updatedUsers++;
-				    break;
-				case BULK_UPDATE_DISABLED:
-				    disabledUsers++;
-				    break;
-			    }
-			} else {
-			    log.error("Couldn't find login attribute for user using attribute name: "
-				    + Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)
-				    + ".  Dumping attributes...");
-			    NamingEnumeration enumAttrs = attrs.getAll();
-			    while (enumAttrs.hasMoreElements()) {
-				log.error(enumAttrs.next());
-			    }
-			}
-		    } catch (Exception e) {
-			// continue processing
-			messages.add(
-				"Error processing context result number " + contextResults + ": " + e.getMessage());
-		    }
+                // add or update this user to LAMS
+                boolean disabled = getDisabledBoolean(attrs);
+                String login = getSingleAttributeString(
+                    attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)));
+                if ((login != null) && (login.trim().length() > 0)) {
+                    int code = bulkUpdateLDAPUser(login, attrs, disabled);
+                    switch (code) {
+                    case BULK_UPDATE_CREATED:
+                        createdUsers++;
+                        break;
+                    case BULK_UPDATE_UPDATED:
+                        updatedUsers++;
+                        break;
+                    case BULK_UPDATE_DISABLED:
+                        disabledUsers++;
+                        break;
+                    }
+                } else {
+                    log.error("Couldn't find login attribute for user using attribute name: "
+                        + Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR)
+                        + ".  Dumping attributes...");
+                    NamingEnumeration enumAttrs = attrs.getAll();
+                    while (enumAttrs.hasMoreElements()) {
+                    log.error(enumAttrs.next());
+                    }
+                }
+                } catch (Exception e) {
+                // continue processing
+                messages.add(
+                    "Error processing context result number " + contextResults + ": " + e.getMessage());
+                }
 
-		    contextResults++;
-		}
+                contextResults++;
+            }
 
-		cookie = getPagedResponseCookie(ctx.getResponseControls());
+            cookie = getPagedResponseCookie(ctx.getResponseControls());
 
-		// set response cookie to continue paged result
-		ctx.setRequestControls(
-			new Control[] { new PagedResultsControl(pageSize, cookie, Control.NONCRITICAL) });
-	    } while (cookie != null);
-	    log.info("Ldap context " + baseDN + " returned " + contextResults + " users.");
-	    ctx.close();
-	} catch (NamingException e) {
-	    messages.add("Error while processing " + baseDN + ": " + e.getMessage());
-	    log.error(e, e);
-	} catch (IOException e) {
-	    messages.add("Error setting response cookie to continue paged ldap search results: " + e.getMessage());
-	    log.error(e, e);
-	} catch (Exception e) {
-	    messages.add("Unknown error: " + e.getMessage());
-	    log.error(e, e);
-	}
-	totalResults += contextResults;
+            // set response cookie to continue paged result
+            ctx.setRequestControls(
+                new Control[] { new PagedResultsControl(pageSize, cookie, Control.NONCRITICAL) });
+            } while (cookie != null);
+            log.info("Ldap context " + baseDN + " returned " + contextResults + " users.");
+            ctx.close();
+        } catch (NamingException e) {
+            messages.add("Error while processing " + baseDN + ": " + e.getMessage());
+            log.error(e, e);
+        } catch (IOException e) {
+            messages.add("Error setting response cookie to continue paged ldap search results: " + e.getMessage());
+            log.error(e, e);
+        } catch (Exception e) {
+            messages.add("Unknown error: " + e.getMessage());
+            log.error(e, e);
+        }
+        totalResults += contextResults;
 
-	BulkUpdateResultDTO dto = new BulkUpdateResultDTO(totalResults, createdUsers, updatedUsers, disabledUsers,
-		messages);
+        BulkUpdateResultDTO dto = new BulkUpdateResultDTO(totalResults, createdUsers, updatedUsers, disabledUsers,
+            messages);
 
-	log.info("Ldap returned " + totalResults + " users.");
-	log.info(createdUsers + " were created, " + updatedUsers + " were updated/existed, and " + disabledUsers
-		+ " were disabled.");
+        log.info("Ldap returned " + totalResults + " users.");
+        log.info(createdUsers + " were created, " + updatedUsers + " were updated/existed, and " + disabledUsers
+            + " were disabled.");
 
-	return dto;
+        return dto;
     }
 
     // create, update, or disable this user
     private int bulkUpdateLDAPUser(String login, Attributes attrs, boolean disabled) {
-	int returnCode = -1;
-	User user = service.getUserByLogin(login);
-	if (!disabled) {
-	    if (user == null) {
-		log.info("Creating new user for LDAP username: " + login);
-		if (createLDAPUser(attrs)) {
-		    user = service.getUserByLogin(login);
-		    returnCode = LdapService.BULK_UPDATE_CREATED;
-		} else {
-		    log.error("Couldn't create new user for LDAP username: " + login);
-		}
-	    } else {
-		updateLDAPUser(user, attrs);
-		returnCode = LdapService.BULK_UPDATE_UPDATED;
-	    }
-	    if (!addLDAPUser(attrs, user.getUserId())) {
-		log.error("Couldn't add LDAP user: " + login + " to organisation.");
-	    }
-	} else {
-	    // remove user from groups and set disabled flag
-	    if (user != null) {
-		service.disableUser(user.getUserId());
-		returnCode = LdapService.BULK_UPDATE_DISABLED;
-	    }
-	}
-	return returnCode;
+        int returnCode = -1;
+        User user = service.getUserByLogin(login);
+        if (!disabled) {
+            if (user == null) {
+            log.info("Creating new user for LDAP username: " + login);
+            if (createLDAPUser(attrs)) {
+                user = service.getUserByLogin(login);
+                returnCode = LdapService.BULK_UPDATE_CREATED;
+            } else {
+                log.error("Couldn't create new user for LDAP username: " + login);
+            }
+            } else {
+            updateLDAPUser(user, attrs);
+            returnCode = LdapService.BULK_UPDATE_UPDATED;
+            }
+            if (!addLDAPUser(attrs, user.getUserId())) {
+            log.error("Couldn't add LDAP user: " + login + " to organisation.");
+            }
+        } else {
+            // remove user from groups and set disabled flag
+            if (user != null) {
+            service.disableUser(user.getUserId());
+            returnCode = LdapService.BULK_UPDATE_DISABLED;
+            }
+        }
+        return returnCode;
     }
 
     // get paged result response cookie
     private byte[] getPagedResponseCookie(Control[] controls) {
-	if (controls != null) {
-	    for (Control control : controls) {
-		if (control instanceof PagedResultsResponseControl) {
-		    PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
-		    return prrc.getCookie();
-		}
-	    }
-	}
-	return null;
+        if (controls != null) {
+            for (Control control : controls) {
+            if (control instanceof PagedResultsResponseControl) {
+                PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
+                return prrc.getCookie();
+            }
+            }
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------------
@@ -749,15 +749,15 @@ public class LdapService implements ILdapService {
     // ---------------------------------------------------------------------
 
     public void setService(IUserManagementService service) {
-	this.service = service;
+	    this.service = service;
     }
 
     public void setTimezoneService(ITimezoneService timezoneService) {
-	this.timezoneService = timezoneService;
+	    this.timezoneService = timezoneService;
     }
 
     public void setDataSource(DataSource dataSource) {
-	this.dataSource = dataSource;
+	    this.dataSource = dataSource;
     }
 
 }
