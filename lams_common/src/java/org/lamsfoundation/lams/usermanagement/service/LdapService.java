@@ -332,15 +332,15 @@ public class LdapService implements ILdapService {
             if (lField.equals(ldapOrgCn)) {
                 // Main org
                 ldapOrgAttrs = new BasicAttributes();
-                ldapOrgAttrs.put("sn", getSingleAttributeString(attrs.get("ou")));
+                ldapOrgAttrs.put("description", getSingleAttributeString(attrs.get("ou")));
             } else {
                 // Secondary org
-                ldapOrgAttrs = getLDAPOrganization(ldapOrg);
+                ldapOrgAttrs = getLDAPOrganization(ldapOrg, ldapOrgCn);
             }
             List orgList = service.findByProperty(Organisation.class, orgField, ldapOrg);
             if (ldapOrgAttrs != null && (orgList == null || orgList.isEmpty())) {
-                log.debug("Org not found by " + orgField + ". Searching by name: " + getSingleAttributeString(ldapOrgAttrs.get("sn")));
-                orgList = service.findByProperty(Organisation.class, "name", getSingleAttributeString(ldapOrgAttrs.get("sn")));
+                log.debug("Org not found by " + orgField + ". Searching by name: " + getSingleAttributeString(ldapOrgAttrs.get("description")));
+                orgList = service.findByProperty(Organisation.class, "name", getSingleAttributeString(ldapOrgAttrs.get("description")));
             }
             if ((orgList != null) && !orgList.isEmpty()) {
                 Organisation org = null;
@@ -425,7 +425,7 @@ public class LdapService implements ILdapService {
           String queryString = "INSERT INTO lams_organisation(name, code, description, create_date, created_by, organisation_state_id, admin_add_new_users, admin_browse_all_users, admin_change_status, admin_create_guest, enable_course_notifications, enable_learner_gradebook, parent_organisation_id, organisation_type_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
           ptmt = conn.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
-          ptmt.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
+          ptmt.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("description")));
           ptmt.setString(2, "" + ldapOrg);
           ptmt.setString(3, "Added by LDAPService");
           ptmt.setDate(4, sqlDate);
@@ -457,7 +457,7 @@ public class LdapService implements ILdapService {
 
           String query1 = "INSERT INTO lams_workspace_folder(name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?);";
           ptmt1 = conn.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
-          ptmt1.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
+          ptmt1.setString(1, "" + getSingleAttributeString(ldapOrgAttrs.get("description")));
           ptmt1.setInt(2, userId);
           ptmt1.setInt(3, orgId);
           ptmt1.setDate(4, sqlDate);
@@ -476,7 +476,7 @@ public class LdapService implements ILdapService {
           String query2 = "INSERT INTO lams_workspace_folder(parent_folder_id, name, user_id, organisation_id, create_date_time, last_modified_date_time, lams_workspace_folder_type_id) VALUES(?,?,?,?,?,?,?);";
           ptmt2 = conn.prepareStatement(query2, Statement.RETURN_GENERATED_KEYS);
           ptmt2.setInt(1, w1);
-          ptmt2.setString(2, "" + getSingleAttributeString(ldapOrgAttrs.get("sn")));
+          ptmt2.setString(2, "" + getSingleAttributeString(ldapOrgAttrs.get("description")));
           ptmt2.setInt(3, userId);
           ptmt2.setInt(4, orgId);
           ptmt2.setDate(5, sqlDate);
@@ -589,22 +589,19 @@ public class LdapService implements ILdapService {
         return this.bulkUpdate("*");
     }
 
-    private Attributes getLDAPOrganization(String uid) {
+    private Attributes getLDAPOrganization(String uid, String baseDN) {
         Properties env = getEnv();
-
-        // get base DN to search on
-        String baseDN = Configuration.get(ConfigurationKeys.LDAP_BASE_DN);
 
         if (uid == "people") {
             return null;
         }
 
         // get search filter
-        String filter = "(&(uid={0})(|(umdObject=Account)(umdObject=Personel)))";
+        String filter = "(umdObject=schUnit)";
 
         // set search to subtree of base dn
         SearchControls ctrl = new SearchControls();
-        ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        ctrl.setSearchScope(SearchControls.OBJECT_SCOPE);
 
         List<String> messages = new ArrayList<String>();
 
@@ -619,8 +616,8 @@ public class LdapService implements ILdapService {
             }
 
             // perform ldap search, in batches
-            log.info("Searching for organization " + baseDN + " using filter " + filter + " with arg " + uid);
-            Object[] filterArgs = { uid };
+            log.info("Searching for organization " + baseDN + " using filter " + filter);
+            Object[] filterArgs = {};
             NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, filterArgs, ctrl);
             while (results.hasMore()) {
                 try {
