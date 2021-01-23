@@ -318,7 +318,7 @@
 				<%-- <a href="<lams:LAMSURL/>/www/copyright.jsp" target='copyright' onClick="openCopyRight()">
 					&copy; <fmt:message key="msg.LAMS.copyright.short" /> 
 				</a> --%>
-				Copyright &copy; 2020 Πανελλήνιο Σχολικό Δίκτυο. Η υπηρεσία βασίστηκε στο λογισμικό <a href="<lams:LAMSURL/>/www/copyright.jsp" target='copyright' onClick="openCopyRight()">LAMS</a>
+				Copyright &copy; 2021 Πανελλήνιο Σχολικό Δίκτυο. Η υπηρεσία βασίστηκε στο λογισμικό <a href="<lams:LAMSURL/>/www/copyright.jsp" target='copyright' onClick="openCopyRight()">LAMS</a>
 				<span class="text-danger text-center" id="timezoneWarning"></span>
 			</p>
 		</div>
