@@ -31,7 +31,7 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
-    && git checkout b0aa5ff530f717d8edb5a08bc52336837c1e83c8
+    && git checkout 1fe868ff15a31d0ab1da9b4a81eb226b0df3b7ff
 
 ADD  ./lams_central/conf/security/Owasp.CsrfGuard.properties /app/lams/lams_central/conf/security/Owasp.CsrfGuard.properties
 
