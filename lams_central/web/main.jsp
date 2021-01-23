@@ -282,6 +282,13 @@
 					<span class="xs-hidden"><fmt:message key="label.tour"/></span>
 				</a>
 			</li>
+
+			<li role="presentation" class="dropdown">
+				<a href="https://lams.sch.gr/%ce%bf%ce%b4%ce%b7%ce%b3%ce%bf%ce%af-%ce%b2%ce%bf%ce%b7%ce%b8%ce%bf%ce%af/" id="index-helpguides" target="_blank" class="info-number">
+					<i class="fa fa-book"></i>
+					<span class="xs-hidden">Οδηγοί - Βοηθοί</span>
+				</a>
+			</li>
 					
 		</ul>
 
