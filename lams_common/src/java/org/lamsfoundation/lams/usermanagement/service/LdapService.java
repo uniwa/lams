@@ -432,7 +432,7 @@ public class LdapService implements ILdapService {
           ptmt.setInt(5, 9);
           ptmt.setInt(6, 1);
           ptmt.setInt(7, 0);
-          ptmt.setInt(8, 1);
+          ptmt.setInt(8, 0);
           ptmt.setInt(9, 1);
           ptmt.setInt(10, 1);
           ptmt.setInt(11, 1);
