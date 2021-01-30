@@ -32,3 +32,15 @@ a[href="https://lams.sch.gr/lams/admin/orgmanage.do?org=1"] {
     -webkit-box-shadow: none;
     box-shadow: none;
 }
+
+#templateContainerCell div[learninglibrarytitle="Pixlr"] {
+    display: none;
+}
+
+#templateContainerCell div[learninglibrarytitle="Share commonCartridge"] {
+    display: none;
+}
+
+#templateContainerCell div[learninglibrarytitle="MCQ"] {
+    display: none;
+}
