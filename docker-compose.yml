@@ -6,38 +6,39 @@ services:
             dockerfile: Dockerfile
         ports:
             - 80:9080
+            - 9001:9001
             - 9990:9990
         volumes:
             - ./src:/app/lams
             # - ./:/app2
         env_file: .env
-        depends_on:
-          - mysql
-    mysql:
-        image: mysql
-        command: --default-authentication-plugin=mysql_native_password
-        restart: always
-        volumes:
-            - ../data/lams/mysql:/var/lib/mysql
-        environment:
-            MYSQL_ROOT_PASSWORD: verysecret
-            MYSQL_DATABASE: lams
-            MYSQL_USER: lams
-            MYSQL_PASSWORD: verysecret
-    phpmyadmin:
-        image: phpmyadmin/phpmyadmin
-        depends_on:
-          - mysql
-        ports:
-            - 8181:80
-        environment:
-            PMA_HOST: 'mysql'
-            MYSQL_USERNAME: root
+#        depends_on:
+#          - mysql
+#    mysql:
+#        image: mysql
+#        command: --default-authentication-plugin=mysql_native_password
+#        restart: always
+#        volumes:
+#            - ../data/lams/mysql:/var/lib/mysql
+#        environment:
+#            MYSQL_ROOT_PASSWORD: verysecret
+#            MYSQL_DATABASE: lams
+#            MYSQL_USER: lams
+#            MYSQL_PASSWORD: verysecret
+#    phpmyadmin:
+#        image: phpmyadmin/phpmyadmin
+#        depends_on:
+#          - mysql
+#        ports:
+#            - 8181:80
+#        environment:
+#            PMA_HOST: 'mysql'
+#            MYSQL_USERNAME: root
     phpmyadmin_production:
         image: phpmyadmin/phpmyadmin
         ports:
             - 8182:80
         environment:
             PMA_HOST: 'host.docker.internal'
-            PMA_PORT: '3317'
+            PMA_PORT: '3306'
             MYSQL_USERNAME: root

@@ -74,7 +74,9 @@ ENV DBHOST=127.0.0.1 \
     DBUSERNAME=lams_docker_setup_user \
     DBPASSWORD=lams_docker_setup_password \
     WEB_CONCURRENCY=8 \
-    PORT=9080
+    PORT=9080 \
+    WORDPRESS_HOST=10.2.47.59 \
+    WORDPRESS_PORT=5080
 
 RUN cd lams/lams_build/ \
     && sh -c "mysqld --user=root --skip-grant-tables &" \
