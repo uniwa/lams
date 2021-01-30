@@ -488,30 +488,32 @@ public class UserManagementService implements IUserManagementService {
                 Vector < UserDTO > managers = getUsersFromOrganisationByRole(pOrg.getOrganisationId(), Role.GROUP_MANAGER,
                     false);
                 for (UserDTO m: managers) {
-                    User user = (User) findById(User.class, m.getUserID());
-                    UserOrganisation uo = new UserOrganisation(user, organisation);
-                    log.debug("adding course manager: " + user.getUserId() + " as staff");
-                    UserOrganisationRole uor = new UserOrganisationRole(uo,
-                        (Role) findById(Role.class, Role.ROLE_MONITOR));
-                    HashSet uors = new HashSet();
-                    uors.add(uor);
-                    uo.setUserOrganisationRoles(uors);
+                    if (m.getUserID() == userID) {
+                        User user = (User) findById(User.class, m.getUserID());
+                        UserOrganisation uo = new UserOrganisation(user, organisation);
+                        log.debug("adding course manager: " + user.getUserId() + " as staff");
+                        UserOrganisationRole uor = new UserOrganisationRole(uo,
+                            (Role) findById(Role.class, Role.ROLE_MONITOR));
+                        HashSet uors = new HashSet();
+                        uors.add(uor);
+                        uo.setUserOrganisationRoles(uors);
 
-                    // attach new UserOrganisation to the Organisation, then
-                    // save the UserOrganisation.
-                    // this way the Set Organisations.userOrganisations contains
-                    // persisted objects,
-                    // and we can safely add new UserOrganisations if necessary
-                    // (i.e. if there are
-                    // several course managers).
-                    Set uos = organisation.getUserOrganisations();
-                    if (uos == null) {
-                        uos = new HashSet();
+                        // attach new UserOrganisation to the Organisation, then
+                        // save the UserOrganisation.
+                        // this way the Set Organisations.userOrganisations contains
+                        // persisted objects,
+                        // and we can safely add new UserOrganisations if necessary
+                        // (i.e. if there are
+                        // several course managers).
+                        Set uos = organisation.getUserOrganisations();
+                        if (uos == null) {
+                            uos = new HashSet();
+                        }
+                        uos.add(uo);
+                        organisation.setUserOrganisations(uos);
+
+                        save(uo);
                     }
-                    uos.add(uo);
-                    organisation.setUserOrganisations(uos);
-
-                    save(uo);
                 }
             }
         } else {
