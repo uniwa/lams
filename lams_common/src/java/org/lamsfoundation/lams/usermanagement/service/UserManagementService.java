@@ -228,7 +228,7 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
-    public < T > List < T > findByPropertyValues(Class < T > clazz, String name, Collection << ? > values) {
+    public <T> List<T> findByPropertyValues(Class<T> clazz, String name, Collection<?> values) {
         return baseDAO.findByPropertyValues(clazz, name, values);
     }
 
@@ -354,12 +354,12 @@ public class UserManagementService implements IUserManagementService {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map < Integer, Set < Integer >> getRolesForUser(Integer userId) {
-        return ((List < UserOrganisation > ) findByProperty(UserOrganisation.class, "user.userId", userId)).stream()
-            .collect(Collectors.toMap(userOrganisation - > userOrganisation.getOrganisation().getOrganisationId(),
-                userOrganisation - > userOrganisation.getUserOrganisationRoles().stream()
-                .map(userOrganisationRole - > userOrganisationRole.getRole().getRoleId())
-                .collect(Collectors.toSet())));
+    public Map<Integer, Set<Integer>> getRolesForUser(Integer userId) {
+        return ((List<UserOrganisation>) findByProperty(UserOrganisation.class, "user.userId", userId)).stream()
+            .collect(Collectors.toMap(userOrganisation -> userOrganisation.getOrganisation().getOrganisationId(),
+                userOrganisation -> userOrganisation.getUserOrganisationRoles().stream()
+                    .map(userOrganisationRole -> userOrganisationRole.getRole().getRoleId())
+                    .collect(Collectors.toSet())));
     }
 
     @Override
