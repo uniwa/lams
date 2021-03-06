@@ -1,0 +1,17 @@
+[Unit]
+Description=Backend Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+#User=user
+TimeoutStartSec=0
+Restart=always
+RestartSec=30
+ExecStartPre=-/usr/bin/docker stop %n
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStartPre=/usr/bin/docker pull v2tec/watchtower
+ExecStart=/usr/bin/docker run --name %n --env-file /root/env.lams -p 80:9080 -p 9001:9001 -v /opt/lams-data/:/opt/lams-data/ -v /opt/lams-www/secure:/usr/local/wildfly-14.0/standalone/deployments/lams.ear/lams-www.war/secure schgr/lams:latest
+
+[Install]
+WantedBy=multi-user.target
