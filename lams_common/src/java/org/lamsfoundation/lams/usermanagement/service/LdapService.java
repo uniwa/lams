@@ -320,6 +320,7 @@ public class LdapService implements ILdapService {
 	    // get list of possible matching organisations
         for (String ldapOrgCn : ldapOrgs) {
             String ldapOrg = null;
+            String finalLdapOrg = null;
             if (ldapOrgCn.indexOf("=") != -1 && ldapOrgCn.indexOf(",") != -1) {
                 // Get the uid
                 ldapOrg = ldapOrgCn.substring(ldapOrgCn.indexOf("=")+1,ldapOrgCn.indexOf(","));
@@ -337,9 +338,15 @@ public class LdapService implements ILdapService {
                 // Secondary org
                 ldapOrgAttrs = getLDAPOrganization(ldapOrg, ldapOrgCn);
             }
-            List orgList = service.findByProperty(Organisation.class, orgField, ldapOrg);
+            List orgList = service.findByProperty(Organisation.class, orgField, ldapOrgCn);
+            finalLdapOrg = ldapOrgCn;
             if (ldapOrgAttrs != null && (orgList == null || orgList.isEmpty())) {
-                log.debug("Org not found by " + orgField + ". Searching by name: " + getSingleAttributeString(ldapOrgAttrs.get("description")));
+                log.debug("Org not found by full " + orgField + ". Searching by partial: " + ldapOrg);
+                orgList = service.findByProperty(Organisation.class, orgField, ldapOrg);
+                finalLdapOrg = ldapOrg;
+            }
+            if (ldapOrgAttrs != null && (orgList == null || orgList.isEmpty())) {
+                log.debug("Org not found by partial " + orgField + ". Searching by name: " + getSingleAttributeString(ldapOrgAttrs.get("description")));
                 orgList = service.findByProperty(Organisation.class, "name", getSingleAttributeString(ldapOrgAttrs.get("description")));
             }
             if ((orgList != null) && !orgList.isEmpty()) {
@@ -350,13 +357,13 @@ public class LdapService implements ILdapService {
                     // if there are multiple orgs, select the one that is
                     // active, if there is one
                     HashMap<String, Object> properties = new HashMap<String, Object>();
-                    properties.put(orgField, ldapOrg);
+                    properties.put(orgField, finalLdapOrg);
                     properties.put("organisationState.organisationStateId", OrganisationState.ACTIVE);
                     orgList = service.findByProperties(Organisation.class, properties);
                     if (orgList.size() == 1) {
                         org = (Organisation) orgList.get(0);
                     } else {
-                        log.warn("More than one LAMS organisation found with the " + orgField + ": " + ldapOrg);
+                        log.warn("More than one LAMS organisation found with the " + orgField + ": " + finalLdapOrg);
                         isAddingUserSuccessful = false;
                         break;
                     }
@@ -378,17 +385,17 @@ public class LdapService implements ILdapService {
                     break;
                 }
             } else {
-                log.warn("No LAMS organisations found with the " + orgField + ": " + ldapOrg);
+                log.warn("No LAMS organisations found with the " + orgField + ": " + ldapOrgCn);
                 if (ldapOrgAttrs != null) {
                     try {
-                        isAddingUserSuccessful = createOrgs(dataSource.getConnection(), ldapOrg, attrs, ldapOrgAttrs, userId);
+                        isAddingUserSuccessful = createOrgs(dataSource.getConnection(), ldapOrgCn, attrs, ldapOrgAttrs, userId);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else {
-                    log.warn("LAMS organisation not found in LDAP " + ldapOrg);
+                    log.warn("LAMS organisation not found in LDAP " + finalLdapOrg);
                 }
             }
 	    }
