@@ -3,7 +3,7 @@ FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.8_10
 WORKDIR /app
 
 # System packages and dependecies
-RUN apk add build-base ruby ruby-dev apache-ant git wget curl nginx supervisor \
+RUN apk add build-base ruby ruby-dev apache-ant git wget curl nginx fontconfig ttf-dejavu supervisor \
     && gem install sass \
     # Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
@@ -85,6 +85,10 @@ RUN cd lams/lams_build/ \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
+
+RUN ln -s /usr/lib/libfontconfig.so.1 /usr/lib/libfontconfig.so && \
+    ln -s /lib/libuuid.so.1 /usr/lib/libuuid.so.1
+ENV LD_LIBRARY_PATH /usr/lib
 
 ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
 ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
