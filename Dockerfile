@@ -78,6 +78,12 @@ ENV DBHOST=127.0.0.1 \
     WORDPRESS_HOST=10.2.47.59 \
     WORDPRESS_PORT=5080
 
+# Workaround for https://github.com/AdoptOpenJDK/openjdk-docker/issues/75
+RUN ln -s /usr/lib/libfontconfig.so.1 /usr/lib/libfontconfig.so && \
+    ln -s /lib/libuuid.so.1 /usr/lib/libuuid.so.1
+ENV LD_LIBRARY_PATH /usr/lib
+# End workaround
+
 RUN cd lams/lams_build/ \
     && sh -c "mysqld --user=root --skip-grant-tables &" \
     && sleep 5 \
@@ -85,10 +91,6 @@ RUN cd lams/lams_build/ \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
-
-RUN ln -s /usr/lib/libfontconfig.so.1 /usr/lib/libfontconfig.so && \
-    ln -s /lib/libuuid.so.1 /usr/lib/libuuid.so.1
-ENV LD_LIBRARY_PATH /usr/lib
 
 ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
 ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
