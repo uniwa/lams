@@ -92,6 +92,7 @@ RUN cd lams/lams_build/ \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
     && ant deploy-lams
 
+ADD ./docker/jwt/public.pem /docker/jwt/public.pem
 ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
 ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
 ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template

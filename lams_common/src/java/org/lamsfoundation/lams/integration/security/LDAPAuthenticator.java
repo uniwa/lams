@@ -46,6 +46,19 @@ import org.lamsfoundation.lams.web.session.SessionManager;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import java.security.interfaces.RSAPublicKey;
+import java.nio.charset.Charset;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.security.KeyFactory;
+import java.io.File;
+import java.nio.file.Files;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.JwtException;
+import java.security.Key;
+
 /**
  * Validates user password against an entry in a LDAP database.
  */
@@ -121,12 +134,32 @@ public class LDAPAuthenticator {
             }
 
             // authenticate
-            env.setProperty(Context.SECURITY_PRINCIPAL, dn);
-            env.setProperty(Context.SECURITY_CREDENTIALS, credential.toString());
-            ctx = new InitialLdapContext(env, null);
+            if (credential.toString().startsWith("JWT___")) {
+                // This is an SSO (CAS) authentication. Validate the JWT token.
+                Key key = readPublicKey(new File("/docker/jwt/public.pem"));
+                try {
+                    if (!Jwts.parser()
+                            .setSigningKey(key)
+                            .parseClaimsJws(credential.toString().substring(6))
+                            .getBody()
+                            .getSubject()
+                            .equals(userName)
+                        ) {
+                        throw new AuthenticationException("JWT username mismatch");
+                    }
+                } catch (JwtException e) {
+                    throw new AuthenticationException("JWT token could not be validated");
+                }
 
-            // if no exception, success
-            LDAPAuthenticator.log.debug("LDAP context created using DN: " + dn);
+                LDAPAuthenticator.log.debug("JWT context created using DN: " + dn);
+            } else {
+                env.setProperty(Context.SECURITY_PRINCIPAL, dn);
+                env.setProperty(Context.SECURITY_CREDENTIALS, credential.toString());
+                ctx = new InitialLdapContext(env, null);
+
+                // if no exception, success
+                LDAPAuthenticator.log.debug("LDAP context created using DN: " + dn);
+            }
             isValid = true;
 
             // start checking whether we need to update user depending on its
@@ -177,6 +210,21 @@ public class LDAPAuthenticator {
         }
 
         return isValid;
+    }
+
+    private static RSAPublicKey readPublicKey(File file) throws Exception {
+        String key = new String(Files.readAllBytes(file.toPath()), Charset.defaultCharset());
+
+        String publicKeyPEM = key
+          .replace("-----BEGIN PUBLIC KEY-----", "")
+          .replaceAll(System.lineSeparator(), "")
+          .replace("-----END PUBLIC KEY-----", "");
+
+        byte[] encoded = Base64.getDecoder().decode(publicKeyPEM);
+
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+        return (RSAPublicKey) keyFactory.generatePublic(keySpec);
     }
 
     private Properties getEnv() {
