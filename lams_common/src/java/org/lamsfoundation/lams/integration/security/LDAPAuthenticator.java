@@ -150,7 +150,7 @@ public class LDAPAuthenticator {
                         throw new AuthenticationException("JWT username mismatch");
                     }
                 } catch (JwtException e) {
-                    throw new AuthenticationException("JWT token could not be validated");
+                    throw new AuthenticationException("JWT token could not be validated: " + e.getMessage());
                 }
 
                 LDAPAuthenticator.log.debug("JWT context created using DN: " + dn);
