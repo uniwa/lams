@@ -21,7 +21,7 @@
  * ****************************************************************
  */
 
-package org.lamsfoundation.lams.integration.security;
+package org.lamsfoundation.lams.security;
 
 import java.util.Properties;
 
@@ -196,7 +196,7 @@ public class LDAPAuthenticator {
                 + ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION + " parameter: "
                 + Configuration.get(ConfigurationKeys.LDAP_SECURITY_AUTHENTICATION));
         } catch (AuthenticationException e) {
-            LDAPAuthenticator.log.info("Incorrect username (" + dn + ") or password. " + credential.toString() + e.getMessage());
+            LDAPAuthenticator.log.info("Incorrect username (" + dn + ") or password. " + e.getMessage());
         } catch (Exception e) {
             LDAPAuthenticator.log.error("LDAP exception", e);
         } finally {

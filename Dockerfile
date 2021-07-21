@@ -42,7 +42,6 @@ ADD ./lams_build/unix.properties lams/lams_build/unix.properties
 
 ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/insert_lams_users.sql
 ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java
-ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/UserManagementService.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/UserManagementService.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml /app/lams/lams_common/src/java/org/lamsfoundation/lams/applicationContext.xml
@@ -53,6 +52,7 @@ ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_centra
 ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/favicon/lams/favicon.ico
 ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app/lams/lams_central/conf/language/lams/ApplicationResources_el_GR.properties
 ADD ./lams_central/src/java/org/lamsfoundation/lams/web/IndexController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/IndexController.java
+ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java
 
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
