@@ -156,7 +156,7 @@
 	<div class="login-footer">
 		<p class="text-muted text-center">
 			<%-- <a href="/lams/www/copyright.jsp" target='copyright' onClick="openCopyRight()"> &copy; <fmt:message key="msg.LAMS.copyright.short" /></a> --%>
-			Copyright &copy; 2021 Πανελλήνιο Σχολικό Δίκτυο. Η υπηρεσία βασίστηκε στο λογισμικό <a href="/lams/www/copyright.jsp" target='copyright' onClick="openCopyRight()">LAMS</a>
+			Copyright &copy; 2022 Πανελλήνιο Σχολικό Δίκτυο. Η υπηρεσία βασίστηκε στο λογισμικό <a href="/lams/www/copyright.jsp" target='copyright' onClick="openCopyRight()">LAMS</a>
 		</p>
 	</div>
 
