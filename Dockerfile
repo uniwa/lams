@@ -1,10 +1,10 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.8_10
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.13_8
 
 WORKDIR /app
 
 # System packages and dependecies
-RUN apk add build-base ruby ruby-dev apache-ant git wget curl nginx fontconfig ttf-dejavu supervisor \
-    && gem install sass \
+RUN apk add build-base npm apache-ant git wget curl nginx fontconfig ttf-dejavu supervisor \
+    && npm install -g sass \
     # Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
 	# then move `envsubst` out of the way so `gettext` can
@@ -31,7 +31,7 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
-    && git checkout ad77e551961dcada00cf13763d393dbc2c08bcfa
+    && git checkout 5d93b04210ad00f6ab5408fffa277d70304c77c9
 
 ADD  ./lams_central/conf/security/Owasp.CsrfGuard.properties /app/lams/lams_central/conf/security/Owasp.CsrfGuard.properties
 
@@ -57,6 +57,7 @@ ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.j
 
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
+    && ln -s /usr/local/bin/sass /usr/bin/sass \
     && cd /app/lams/lams_admin && ant sass.compile
 
 ADD ./lams_central/web /tmp/lams_central_web
@@ -100,7 +101,6 @@ ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template
 
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
-    && ln -s /usr/bin/sass /usr/local/bin/sass \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/127\.0\.0\.1/$\{env\.DBHOST\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_db/$\{env\.DBNAME\}/g" {} \; \
     && find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/lams_docker_setup_user/$\{env\.DBUSERNAME\}/g" {} \; \

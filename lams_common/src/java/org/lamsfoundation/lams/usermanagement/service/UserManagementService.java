@@ -83,6 +83,7 @@ import org.lamsfoundation.lams.util.MessageService;
 import org.lamsfoundation.lams.util.imgscalr.ResizePictureUtil;
 import org.lamsfoundation.lams.web.session.SessionManager;
 import org.lamsfoundation.lams.web.util.AttributeNames;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -97,7 +98,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  *
  * @author Fei Yang, Manpreet Minhas
  */
-public class UserManagementService implements IUserManagementService {
+public class UserManagementService implements IUserManagementService, InitializingBean {
 
     private Logger log = Logger.getLogger(UserManagementService.class);
 
@@ -124,6 +125,27 @@ public class UserManagementService implements IUserManagementService {
     private static ILogEventService logEventService;
 
     private IToolContentHandler centralToolContentHandler;
+
+    private static IUserManagementService instance;
+
+    /*
+     * Sometimes we need access to a service from within an entity.
+     * For example when fetching ActivityEvaluation for ToolActivity - they should not be in OneToOne relationship
+     * as it can not be cached, i.e. is always eagerly fetched.
+     * This singleton-type access to service allows fetching data from DB from wherever in code.
+     * It is probably a bad design, but we can not enforce lazy loading in any other reasonable way
+     * and eager loading makes up a good part of queries sent to DB.
+     * The service fetched this way should probably be used for read-only queries
+     * as we deliver the real service object, not its transactional proxy.
+     */
+    @Override
+    public void afterPropertiesSet() {
+        instance = this;
+    }
+
+    public static IUserManagementService getInstance() {
+        return instance;
+    }
 
     // ---------------------------------------------------------------------
     // Service Methods
@@ -228,13 +250,23 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
+    public List findByProperty(Class clazz, String name, Object value, boolean cache) {
+        return baseDAO.findByProperty(clazz, name, value, cache);
+    }
+
+    @Override
     public <T> List<T> findByPropertyValues(Class<T> clazz, String name, Collection<?> values) {
         return baseDAO.findByPropertyValues(clazz, name, values);
     }
 
     @Override
-    public List findByProperties(Class clazz, Map < String, Object > properties) {
-        return baseDAO.findByProperties(clazz, properties);
+    public List findByProperties(Class clazz, Map <String, Object> properties) {
+        return findByProperties(clazz, properties, false);
+    }
+
+    @Override
+    public List findByProperties(Class clazz, Map <String, Object> properties, boolean cache) {
+        return baseDAO.findByProperties(clazz, properties, cache);
     }
 
     @Override
@@ -300,9 +332,8 @@ public class UserManagementService implements IUserManagementService {
 
     @Override
     public Organisation getRootOrganisation() {
-        return baseDAO
-            .findByProperty(Organisation.class, "organisationType.organisationTypeId", OrganisationType.ROOT_TYPE)
-            .get(0);
+        return baseDAO.findByProperty(Organisation.class, "organisationType.organisationTypeId",
+            OrganisationType.ROOT_TYPE, true).get(0);
     }
 
     @Override
@@ -311,7 +342,7 @@ public class UserManagementService implements IUserManagementService {
         properties.put("userOrganisation.user.userId", userId);
         properties.put("userOrganisation.organisation.organisationId", orgId);
         properties.put("role.name", roleName);
-        if (baseDAO.findByProperties(UserOrganisationRole.class, properties).size() == 0) {
+        if (baseDAO.findByProperties(UserOrganisationRole.class, properties, true).size() == 0) {
             return false;
         }
         return true;
@@ -327,7 +358,7 @@ public class UserManagementService implements IUserManagementService {
         Map < String, Object > properties = new HashMap < > ();
         properties.put("organisationType.organisationTypeId", typeId);
         properties.put("organisationState.organisationStateId", stateId);
-        return baseDAO.findByProperties(Organisation.class, properties);
+        return baseDAO.findByProperties(Organisation.class, properties, true);
     }
 
     @Override
@@ -344,7 +375,6 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List < UserOrganisationRole > getUserOrganisationRoles(Integer orgId, String login) {
         Map < String, Object > properties = new HashMap < > ();
         properties.put("userOrganisation.organisation.organisationId", orgId);
@@ -947,7 +977,7 @@ public class UserManagementService implements IUserManagementService {
     @Override
     public Theme getDefaultTheme() {
         String htmlName = Configuration.get(ConfigurationKeys.DEFAULT_THEME);
-        List < Theme > list = findByProperty(Theme.class, "name", htmlName);
+        List < Theme > list = findByProperty(Theme.class, "name", htmlName, true);
         return list != null ? list.get(0) : null;
     }
 
