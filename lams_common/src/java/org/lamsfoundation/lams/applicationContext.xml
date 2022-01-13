@@ -24,6 +24,8 @@
                 <prop key="hibernate.cache.infinispan.statistics">true</prop>
                 <prop key="hibernate.generate_statistics">true</prop>
 
+                <prop key="hibernate.enable_lazy_load_no_trans">true</prop>
+
                 <!-- Only entity cache is fetched from WildFly container.
                      Query and collection cache templates need to be modified here. -->
                 <prop key="hibernate.cache.infinispan.cachemanager">java:jboss/infinispan/container/hibernate</prop>
