@@ -8,17 +8,17 @@
 # Απαιτήσεις συστήματος
 Το hardware του συστήματος θα πρέπει να πληρεί τις ελάχιστες προδιαγραφές της εφαρμογής LAMS όπως περιγράφονται στην ιστοσελίδα της.
 
-Ως software ή μόνη απαίτηση είναι η ύπαρξη εγκατεστημένου docker, καθώς όλη η υπηρεσία εγκαθίσταται και εκτελείται εντός contianer.
+Ως software ή μόνη απαίτηση είναι η ύπαρξη εγκατεστημένου Docker, καθώς όλη η υπηρεσία εγκαθίσταται και εκτελείται εντός container.
 
 # Εγκατάσταση
-- cp .env.dist .env
-- docker-compose build
-- docker-compose up mysql
+- `cp .env.dist .env`
+- `docker-compose build`
+- `docker-compose up mysql`
 - Περιμένετε 5-10 λεπτά για να ολοκληρωθεί η αρχικοποίηση της βάσης.
-- docker-compose up lams
+- `docker-compose up lams`
 - Στη συνέχεια η υπηρεσία θα είναι διαθέσιμη στην τοποθεσία http://localhost με στοιχεία σύνδεσης sysadmin/sysadmin.
 
 Το docker-compose.yml περιλαμβάνει επίσης ένα διαχειριστικό για τη βάση (phpmyadmin) μέσω της εντολής:
-- docker-compose up phpmyadmin
+- `docker-compose up phpmyadmin`
 
 Το διαχειριστικό είναι διαθέσιμο στην τοποθεσία http://localhost:8181.
