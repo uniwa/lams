@@ -78,7 +78,8 @@ ENV DBHOST=127.0.0.1 \
     WEB_CONCURRENCY=8 \
     PORT=9080 \
     WORDPRESS_HOST=10.2.47.59 \
-    WORDPRESS_PORT=5080
+    WORDPRESS_PORT=5080 \
+    NGINXENV=standalone
 
 # Workaround for https://github.com/AdoptOpenJDK/openjdk-docker/issues/75
 RUN ln -s /usr/lib/libfontconfig.so.1 /usr/lib/libfontconfig.so && \
@@ -97,7 +98,10 @@ RUN cd lams/lams_build/ \
 ADD ./docker/jwt/public.pem /docker/jwt/public.pem
 ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
 ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
-ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template
+# Wordpress proxy landing page
+ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template.proxy
+# Standalone
+ADD ./docker/conf/nginx_standalone.conf /etc/nginx/conf.d/default.template.standalone
 
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \

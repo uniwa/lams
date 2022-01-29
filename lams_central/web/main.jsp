@@ -24,14 +24,14 @@
 	<script type="text/javascript" src="${lams}includes/javascript/jquery.tablesorter-pager.js"></script>
 	<script type="text/javascript" src="${lams}includes/javascript/jquery.tablesorter-widgets.js"></script> 	
 	<script type="text/javascript" src="${lams}includes/javascript/jquery.dialogextend.js"></script>	
-	<script type="text/javascript" src="${lams}includes/javascript/dialog.js"></script>
+	<lams:JSImport src="includes/javascript/dialog.js" />
 	<script type="text/javascript" src="${lams}includes/javascript/bootstrap.min.js"></script>
 	<script type="text/javascript" src="${lams}includes/javascript/bootstrap-tourist.min.js"></script>
 	<script type="text/javascript" src="${lams}includes/javascript/jquery.ui.touch-punch.js"></script>
 	<script type="text/javascript" src="${lams}includes/javascript/jquery.slimscroll.js"></script>
 	<script type="text/javascript" src="${lams}includes/javascript/main.js"></script>
 	<script type="text/javascript">
-		var LAMS_URL = '<lams:LAMSURL/>',	
+		var LAMS_URL = '<lams:LAMSURL/>',
 			decoderDiv = $('<div />'),
 			LABELS = {
 				<fmt:message key="index.emailnotifications" var="EMAIL_NOTIFICATIONS_TITLE_VAR"/>
@@ -101,36 +101,36 @@
 				startTour();
 			</c:if>
 
-			<c:if test="${showTimezoneWarning}"> 
+			<c:if test="${showTimezoneWarning}">
 		    var current_date = new Date( );
 		    var client_gmt_offset_minutes = current_date.getTimezoneOffset( );
 		    $('#offset').html( client_gmt_offset_minutes / 60 );
-		    var lams_gmt_offset_minutes = ( <lams:user property="timeZone.rawOffset"/> + <lams:user property="timeZone.DSTSavings"/> ) / 60000;
+		    var lams_gmt_offset_minutes = <lams:user property="timeZoneOffsetSeconds"/> / 60;
 		    if ( client_gmt_offset_minutes != -lams_gmt_offset_minutes ) {
 			    $('#timezoneWarning').html( '<BR/><fmt:message key="label.timezone.warning"/>');
-				<c:if test="${showTimezoneWarningPopup}"> 
-	 			    $.blockUI({ 
-			            message: '<div class="growlUI"><h2><fmt:message key="label.timezone.warning"/></h2></div>', 
-	 		            fadeIn: 700, 
-			            fadeOut: 700, 
+				<c:if test="${showTimezoneWarningPopup}">
+	 			    $.blockUI({
+			            message: '<div class="growlUI"><h2><fmt:message key="label.timezone.warning"/></h2></div>',
+	 		            fadeIn: 700,
+			            fadeOut: 700,
 			            width: 500,
-			            timeout: 8000, 
-			            showOverlay: false, 
-			            centerY: false, 
-			            css: { 
-			                backgroundColor: '#000', 
-			                '-webkit-border-radius': '10px', 
-			                '-moz-border-radius': '10px', 
-			                opacity: .6, 
-			                color: '#fff' 
-			            } 
-			        }); 
+			            timeout: 8000,
+			            showOverlay: false,
+			            centerY: false,
+			            css: {
+			                backgroundColor: '#000',
+			                '-webkit-border-radius': '10px',
+			                '-moz-border-radius': '10px',
+			                opacity: .6,
+			                color: '#fff'
+			            }
+			        });
 	 			</c:if>
-  		    } 
+  		    }
 		    </c:if>
-		    
+
 		});
-	
+
 		<%@ include file="mainTour.jsp" %>
 
 	</script>
@@ -140,33 +140,33 @@
 <!-- Offcanvas Bar -->
     <nav id="offcanvas" role="navigation">
         <div class="offcanvas-scroll-area">
-        
+
 			<div class="offcanvas-logo">
 				<div class="logo">
 				</div>
 				<a class="offcanvas-toggle"><i class="icon-remove fa fa-bars fa-lg"></i></a>
 			</div>
-			
+
 			<div class="offcanvas-header">
 				<span class="courses-title ">
 					<i class="fa fa-table"></i>&nbsp;<fmt:message key="organisations" />
 				</span>
 			</div>
-        
+
 			<%@ include file="favoriteOrganisations.jsp"%>
-            
+
             <c:if test="${isCourseSearchOn}">
 				<div class="form-group offcanvas-search">
 					<input type="text" id="offcanvas-search-input" class="form-control input-sm" placeholder="<fmt:message key="label.search.for.courses" />..."
 							data-column="1" type="search">
 				</div>
 			</c:if>
-            
+
             <div class="tour-organisations">
 				<lams:TSTable numColumns="2">
 				</lams:TSTable>
 			</div>
-			
+
         </div>
     </nav>
 <!-- /Offcanvas Bar -->
@@ -175,7 +175,7 @@
 
 	<!-- header -->
 	<div class="top-nav">
-	
+
 		<div class="offcanvas-toggle offcanvas-toggle-header">
 			<i class="fa fa-bars tour-course-reveal"></i>
 		</div>
@@ -192,7 +192,7 @@
 	           			</c:otherwise>
 	           		</c:choose>
 		            <img class="portrait-sm portrait-round" src="${portraitSrc}" alt="">
-			                  
+
 					<c:set var="firstName">
 						<lams:user property="firstName" />
 					</c:set>
@@ -200,36 +200,46 @@
 						 <lams:user property="lastName" />
 					</c:set>
 					<span class="xs-hidden">
-						<c:out value="${firstName}" escapeXml="true"/>&nbsp;<c:out value="${lastName}" escapeXml="true"/>								
+						<c:out value="${firstName}" escapeXml="true"/>&nbsp;<c:out value="${lastName}" escapeXml="true"/>
 					</span>
 					<span class=" fa fa-angle-down"></span>
 				</a>
-						
+
 				<ul class="dropdown-menu dropdown-usermenu pull-right">
 					<li>
-						<a href="#" onclick="javascript:showMyProfileDialog(); return false;">
+						<a href="#" id="showProfileButton" onclick="javascript:showMyProfileDialog(); return false;">
 							<i class="fa fa-user"></i> <fmt:message key="index.myprofile"/>
 						</a>
 					</li>
-							
+
+					<c:if test="${showQbCollectionsLink}">
+						<li>
+							<a href="#" id="showQbCollectionsButton" onclick="javascript:openQbCollections(); return false;">
+								<i class="fa fa-bank"></i> <fmt:message key="index.qb.collections"/>
+							</a>
+						</li>
+					</c:if>
+
 					<c:forEach var="adminlink" items="${adminLinks}">
-						
+
 						<c:choose>
 		               		<c:when test="${adminlink.name == 'index.courseman'}">
 		               			<c:set var="iconClass">fa-users</c:set>
+		               			<c:set var="linkId">courseManagementButton</c:set>
 		               		</c:when>
 		               		<c:when test="${adminlink.name == 'index.sysadmin'}">
 		               			<c:set var="iconClass">fa-gear</c:set>
+		               			<c:set var="linkId">sysadminButton</c:set>
 		               		</c:when>
 		               	</c:choose>
-									
+
 						<li>
-							<a href="javascript:;" onclick="<c:out value="${adminlink.url}"/>">
+							<a href="javascript:;" id="<c:out value="${linkId}"/>" onclick="<c:out value="${adminlink.url}"/>">
 								<span><i class="fa ${iconClass}"></i> <fmt:message key="${adminlink.name}"/></span>
 							</a>
 						</li>
 					</c:forEach>
-							                  
+
 					<li>
 						<a href="#nogo" id="logoutButton" onclick="javascript:closeAllChildren(); document.location.href='home/logout.do?'">
 							<i class="fa fa-sign-out"></i> <fmt:message key="index.logout" />
@@ -237,20 +247,20 @@
 					</li>
 				</ul>
 			</li>
-					
+
 			<c:forEach var="headerlink" items="${headerLinks}">
 				<c:choose>
 					<c:when test="${fn:startsWith(headerlink.name, 'index')}">
 						<c:set var="headerLinkName"><fmt:message key="${headerlink.name}" /></c:set>
 						<c:set var="headerLinkIcon">fa-edit</c:set>
 					</c:when>
-							
-					<c:otherwise>							
+
+					<c:otherwise>
 						<c:set var="headerLinkName"><c:out value="${headerlink.name}" /></c:set>
 						<c:set var="headerLinkIcon">fa-at</c:set>
 					</c:otherwise>
 				</c:choose>
-						
+
 				<c:choose>
 					<c:when test="${fn:length(headerLinkName) > 12}">
 						<c:set var="headerLinkTitle" value="${headerLinkName}"/>
@@ -260,10 +270,10 @@
 						<c:set var="headerLinkName" value="${headerLinkName}"/>
 					</c:otherwise>
 				</c:choose>
-						
+
 				<li role="presentation">
 					<a href="<c:out value='${headerlink.url}' />"  id="${headerlink.id}" class="tour-${headerlink.id}" title="${headerLinkTitle}">
-						<i class="fa ${headerLinkIcon}"></i> 
+						<i class="fa ${headerLinkIcon}"></i>
 						<span class="xs-hidden"><c:out value='${headerLinkName}'/></span>
 					</a>
 				</li>
@@ -275,7 +285,7 @@
                		<span id="notificationsPendingCount" class="btn-default"></span>
 				</a>
 			</li>
-					
+
 			<li role="presentation" class="dropdown">
 				<a href="javascript:;" id="index-tour" onclick="javascript:startTour();" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="false">
 					<i class="fa fa-question-circle"></i>
@@ -295,14 +305,14 @@
 	</div>
 	<!-- /header -->
 
-	<!-- content -->      
+	<!-- content -->
 	<div class="content">
 		<div id="messageCell">
 			<%--
 				<div id="message">Important annoucements might be posted here...</div>
 			--%>
 		</div>
-		
+
 		<div class="row no-gutter">
 			<div class="col-xs-12">
 	        	<div id="org-container" class="tour-org-container"></div>
@@ -310,13 +320,13 @@
 		</div>
 	</div>
 	<!-- /content -->
-	        
+
 	<!-- footer -->
 	<footer>
 		<div class="">
 			<p class="text-muted text-center">
 				<%-- <a href="<lams:LAMSURL/>/www/copyright.jsp" target='copyright' onClick="openCopyRight()">
-					&copy; <fmt:message key="msg.LAMS.copyright.short" /> 
+					&copy; <fmt:message key="msg.LAMS.copyright.short" />
 				</a> --%>
 				Copyright &copy; 2022 Πανελλήνιο Σχολικό Δίκτυο. Η υπηρεσία βασίστηκε στο λογισμικό <a href="<lams:LAMSURL/>/www/copyright.jsp" target='copyright' onClick="openCopyRight()">LAMS</a>
 				<span class="text-danger text-center" id="timezoneWarning"></span>

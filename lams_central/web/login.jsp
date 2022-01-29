@@ -21,9 +21,9 @@
  --%>
 <c:choose>
 	<c:when test="${empty login}">
-	
+
 		<%-- Optional Module Placeholder - do not remove --%>
-		
+
 		<lams:head>
 			<title><fmt:message key="title.login.window" /></title>
 			<lams:css/>
@@ -44,10 +44,10 @@
 						submitForm();
 					}
 				}
-				
+
 				function isBrowserCompatible() {
 					return Modernizr.atobbtoa && Modernizr.checked && Modernizr.cookies && Modernizr.nthchild && Modernizr.opacity &&
-						   Modernizr.svg && Modernizr.todataurlpng && Modernizr.websockets && Modernizr.xhrresponsetypetext;
+						   Modernizr.svg && Modernizr.todataurlpng && Modernizr.websockets && Modernizr.xhrresponsetypetext && Modernizr.svgforeignobject;
 					// Modernizr.datauri - should be included, it's a async test though
 					// Modernizr.time - should be included, fails in Chrome for an unknown reason (reported)
 					// Modernizr.xhrresponsetypejson - should be included, fails in IE 11 for an unknown reason (reported)
@@ -75,7 +75,7 @@
 		</lams:head>
 		<body class="login-body">
 		<div class="login-content">
-		
+
     <!-- Fixed navbar -->
     <nav class="navbar navbar-default navbar-login">
 		<div class="container">
@@ -89,7 +89,7 @@
 			<div class="navbar-collapse collapse navbar-right">
 				<div class="pull-right login-logo" title="LAMS - Learning Activity Management System"></div>
 			</div>
-		</div>	
+		</div>
     </nav>
 		<!-- Close navbar -->
 
@@ -100,7 +100,7 @@
       <div class="panel panel-default" >
 				<div class="panel-heading">
 				    <div class="panel-title"> <fmt:message key="button.login" /></div>
-				</div>     
+				</div>
 
         <div class="panel-body" >
             <div id="browserNotCompatible" class="panel panel-danger" style="display: none">
@@ -121,32 +121,31 @@
 						</div>
 						</c:if>
 
-						<form action="/lams/j_security_check" method="POST" name="loginForm" role="form" class="form-horizontal" id="loginForm" autocomplete="off">
-							<input type="hidden" name="redirectURL" value='<c:out value="${param.redirectURL}" 
+						<form action="/lams/j_security_check" method="POST" name="loginForm" role="form" class="form-horizontal" id="loginForm">
+							<input type="hidden" name="redirectURL" value='<c:out value="${param.redirectURL}"
 						  		 escapeXml="true" />' />
              				 <div class="input-group">
 								<span class="input-group-addon"><i class="fa fa-user"></i></span>
-								<input id="j_username" type="text" class="form-control" autocapitalize="off" name="j_username" value="" placeholder="<fmt:message key='label.username' />" onkeypress="onEnter(event)" tabindex="1">
+								<input id="j_username" type="text" class="form-control" autocapitalize="off" name="j_username" value="" placeholder="<fmt:message key='label.username' />" onkeypress="onEnter(event)" tabindex="1" autocomplete="username">
               				</div>
 
 							<div class="input-group voffset5">
 								<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-								<input id="j_password" type="password" class="form-control" name="j_password" placeholder="<fmt:message key='label.password' />" onkeypress="onEnter(event)" tabindex="2">
+								<input id="j_password" type="password" class="form-control" name="j_password" placeholder="<fmt:message key='label.password' />" onkeypress="onEnter(event)" tabindex="2" autocomplete="current-password">
 							</div>
 							<div class="form-group voffset5" style="margin-bottom: 5px;">
 								<c:if test="${isForgotYourPasswordEnabled}">
 							   		<div class="col-md-12 control" style="font-size:75%">
-										<%-- <a id="forgot-password-link" href="#nogo"> <fmt:message key="label.forgot.password" /></a> --%>
-										<a target="_blank" href="http://www.sch.gr/password"> <fmt:message key="label.forgot.password" /></a>
+										<a id="forgot-password-link" href="#nogo"> <fmt:message key="label.forgot.password" /></a>
 							    	</div>
 							    </c:if>
-							    
+
 								<!-- Button -->
 								<div class="col-sm-12 controls voffset5">
 									<a id="loginButton" href="javascript:submitForm()" class="btn btn-primary btn-block" tabindex="3"><fmt:message key="button.login" /></a>
 								</div>
 							</div>
-						</form>     
+						</form>
 				</div>
 			</div>
 		</div>
@@ -162,6 +161,11 @@
 
 		<!--closes page-->
 		</div> <!--  close login-content -->
+		<c:if test="${System.getenv('NGINXENV').equals('proxy')}">
+            <script>
+                window.location = '/';
+            </script>
+        </c:if>
 		</body>
 	</c:when>
 
@@ -196,7 +200,7 @@
 				HttpSession hs = SessionManager.getSession();
 				if (hs != null) {
 					UserDTO userDTO = (UserDTO) hs.getAttribute("user");
-					if (userDTO != null) {
+					if (userDTO != null && !userDTO.getLogin().equals(request.getAttribute("login"))) {
 					    // remove session from mapping
 					    SessionManager.removeSessionByLogin(userDTO.getLogin(), true);
 					}
