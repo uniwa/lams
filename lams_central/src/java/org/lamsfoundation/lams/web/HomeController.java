@@ -360,7 +360,7 @@ public class HomeController {
     public String logout(HttpServletRequest req) throws IOException, ServletException {
 	UserDTO userDTO = getUser();
 	HttpSession session = req.getSession();
-	String logoutURL = (req.getHeader("X-Nginxenv") == "proxy" && StringUtils.isBlank((String) session.getAttribute("integratedLogoutURL"))) ? "https://sso.sch.gr/logout?service=https://lams.sch.gr" : (String) session.getAttribute("integratedLogoutURL");
+	String logoutURL = "https://sso.sch.gr/logout?service=https://lams.sch.gr";
 
 	session.invalidate();
 
