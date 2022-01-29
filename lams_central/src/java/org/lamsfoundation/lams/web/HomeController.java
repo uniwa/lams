@@ -360,7 +360,7 @@ public class HomeController {
     public String logout(HttpServletRequest req) throws IOException, ServletException {
 	UserDTO userDTO = getUser();
 	HttpSession session = req.getSession();
-	String logoutURL = "https://sso.sch.gr/logout?service=https://lams.sch.gr";
+	String logoutURL = "https://lams.sch.gr/cas-login/login.php?logout=true";
 
 	session.invalidate();
 
