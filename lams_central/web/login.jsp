@@ -161,11 +161,11 @@
 
 		<!--closes page-->
 		</div> <!--  close login-content -->
-		<c:if test="${System.getenv('NGINXENV').equals('proxy')}">
-            <script>
+        <script>
+            if ("<%=request.getHeader("X-Nginxenv")%>" == "proxy") {
                 window.location = '/';
-            </script>
-        </c:if>
+            }
+        </script>
 		</body>
 	</c:when>
 
