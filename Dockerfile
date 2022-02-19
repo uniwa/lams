@@ -103,6 +103,7 @@ ADD ./docker/conf/nginx.conf /etc/nginx/nginx.conf.template
 ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template.proxy
 # Standalone
 ADD ./docker/conf/nginx_standalone.conf /etc/nginx/conf.d/default.template.standalone
+ADD ./docker/conf/wildfly_standalone.conf /usr/local/wildfly-14.0.1/bin/standalone.conf
 
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
