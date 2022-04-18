@@ -797,15 +797,15 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     private void checkGroupManager(User user, Organisation org) {
-        if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
-            if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org)) {
-                setRolesForGroupManager(user, org.getChildOrganisations());
-            }
-        } else if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
-            if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org.getParentOrganisation())) {
-                setRolesForGroupManager(user, org.getParentOrganisation().getChildOrganisations());
-            }
-        }
+//         if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
+//             if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org)) {
+//                 setRolesForGroupManager(user, org.getChildOrganisations());
+//             }
+//         } else if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
+//             if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org.getParentOrganisation())) {
+//                 setRolesForGroupManager(user, org.getParentOrganisation().getChildOrganisations());
+//             }
+//         }
     }
 
     private void setRolesForGroupManager(User user, Set childOrgs) {
