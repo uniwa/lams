@@ -57,6 +57,8 @@ ADD ./lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java /app
 ADD ./lams_central/src/java/org/lamsfoundation/lams/web/DisplayGroupController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/DisplayGroupController.java
 ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java
 
+RUN sed -i 's/request.setAttribute("userIdParam", mindmapUser.getUid());/if (request != null \&\& mindmapUser != null) { request.setAttribute("userIdParam", mindmapUser.getUid()); }/g' /app/lams/lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/web/controller/LearningController.java
+
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
     && ln -s /usr/local/bin/sass /usr/bin/sass \
