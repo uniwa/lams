@@ -7,7 +7,7 @@ $gray-light-mid:  lighten($gray-base, 86.5%); // #dddddd
 $gray-lightest:  lighten($gray-base, 96%); // #f5f5f5 or whitesmoke
 
 // Primary colour shades
-$brand-primary-darkest: #c77868; // used for main page offcanvas course list
+$brand-primary-darkest: #5F2EEA; // used for main page offcanvas course list
 $brand-primary-darker: #5F2EEA;  // used for main page offcanvas course list
 $brand-primary-mid: lighten($brand-primary, 12%); // #5798d0
 $brand-primary-light: lighten($brand-primary, 45%); // #dbe9f5
@@ -55,10 +55,10 @@ $complex-activity-fill: #999999;
 $not-started-activity-fill: #009900;
 
 // Used just for main.css - the main page
-$main_default_link: #c17767;
+$main_default_link: #5F2EEA;
 $main_blue_light_highlight: #A6E5FD;
 $main_fav_org_link: #A7B1C2;
-$main_offcanvas_link: #c77868;
+$main_offcanvas_link: #5F2EEA;
 $main_offcanvas_link_color: $body-bg;
 $main_offcanvas_background: $brand-primary-darker;
 $main_offcanvas_color: $gray-lighter;
