@@ -3,7 +3,7 @@
 @import "_main_base.scss";
 
 .top-nav {
-    background-color: #EF927F;
+    background-color: #5F2EEA;
 }
 
 .navbar-nav > li > a {
@@ -41,7 +41,7 @@ ul.dropdown-usermenu li a:hover {
 }
 
 #offcanvas td.active {
-    border-right: 10px solid #ef927f;
+    border-right: 10px solid #5F2EEA;
 }
 
 #favorite-organisations > li > a, .tablesorter a {
@@ -51,7 +51,7 @@ ul.dropdown-usermenu li a:hover {
 // Btn colors overwrite
 .btn-primary {
     color: #fff;
-    background-color: #ef927f;
+    background-color: #5F2EEA;
     border-color: #ffffff;
 }
 .btn-primary.focus,.btn-primary:focus {
@@ -65,12 +65,12 @@ ul.dropdown-usermenu li a:hover {
 }
 .btn-primary.active,.btn-primary:active,.open>.dropdown-toggle.btn-primary {
     color: #fff;
-    background-color: #ef927f;
+    background-color: #5F2EEA;
     background-image: none;
-    border-color: #ef927f;
+    border-color: #5F2EEA;
 }
 .btn-primary.active.focus,.btn-primary.active:focus,.btn-primary.active:hover,.btn-primary:active.focus,.btn-primary:active:focus,.btn-primary:active:hover,.open>.dropdown-toggle.btn-primary.focus,.open>.dropdown-toggle.btn-primary:focus,.open>.dropdown-toggle.btn-primary:hover {
     color: #fff;
-    background-color: #ef927f;
-    border-color: #ef927f;
+    background-color: #5F2EEA;
+    border-color: #5F2EEA;
 }

@@ -20,7 +20,7 @@ services:
         command: --default-authentication-plugin=mysql_native_password
         restart: always
         volumes:
-            - ./data/lams/mysql:/var/lib/mysql
+            - ../data/lams/mysql:/var/lib/mysql
             - ./docker/mysql_seed_data:/docker-entrypoint-initdb.d
         environment:
             MYSQL_ROOT_PASSWORD: verysecret
