@@ -23,28 +23,6 @@
 
 package org.lamsfoundation.lams.usermanagement.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.UUID;
-import java.util.Vector;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.lamsfoundation.lams.contentrepository.NodeKey;
@@ -54,19 +32,7 @@ import org.lamsfoundation.lams.learningdesign.dao.IGroupDAO;
 import org.lamsfoundation.lams.logevent.LogEvent;
 import org.lamsfoundation.lams.logevent.service.ILogEventService;
 import org.lamsfoundation.lams.themes.Theme;
-import org.lamsfoundation.lams.usermanagement.FavoriteOrganisation;
-import org.lamsfoundation.lams.usermanagement.ForgotPasswordRequest;
-import org.lamsfoundation.lams.usermanagement.IUserDAO;
-import org.lamsfoundation.lams.usermanagement.Organisation;
-import org.lamsfoundation.lams.usermanagement.OrganisationGroup;
-import org.lamsfoundation.lams.usermanagement.OrganisationGrouping;
-import org.lamsfoundation.lams.usermanagement.OrganisationType;
-import org.lamsfoundation.lams.usermanagement.Role;
-import org.lamsfoundation.lams.usermanagement.User;
-import org.lamsfoundation.lams.usermanagement.UserOrganisation;
-import org.lamsfoundation.lams.usermanagement.UserOrganisationCollapsed;
-import org.lamsfoundation.lams.usermanagement.UserOrganisationRole;
-import org.lamsfoundation.lams.usermanagement.WorkspaceFolder;
+import org.lamsfoundation.lams.usermanagement.*;
 import org.lamsfoundation.lams.usermanagement.dao.IFavoriteOrganisationDAO;
 import org.lamsfoundation.lams.usermanagement.dao.IOrganisationDAO;
 import org.lamsfoundation.lams.usermanagement.dao.IRoleDAO;
@@ -74,18 +40,19 @@ import org.lamsfoundation.lams.usermanagement.dao.IUserOrganisationDAO;
 import org.lamsfoundation.lams.usermanagement.dto.OrganisationDTO;
 import org.lamsfoundation.lams.usermanagement.dto.UserDTO;
 import org.lamsfoundation.lams.usermanagement.dto.UserManageBean;
-import org.lamsfoundation.lams.util.CommonConstants;
-import org.lamsfoundation.lams.util.Configuration;
-import org.lamsfoundation.lams.util.ConfigurationKeys;
-import org.lamsfoundation.lams.util.HashUtil;
-import org.lamsfoundation.lams.util.LanguageUtil;
-import org.lamsfoundation.lams.util.MessageService;
+import org.lamsfoundation.lams.util.*;
 import org.lamsfoundation.lams.util.imgscalr.ResizePictureUtil;
+import org.lamsfoundation.lams.web.filter.AuditLogFilter;
 import org.lamsfoundation.lams.web.session.SessionManager;
 import org.lamsfoundation.lams.web.util.AttributeNames;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import java.io.*;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -220,6 +187,80 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public Organisation saveOrganisation(Organisation organisation, Integer userID) {
+
+        User creator = (User) findById(User.class, userID);
+
+        if (organisation.getOrganisationId() == null) {
+            Date createDateTime = new Date();
+            organisation.setCreateDate(createDateTime);
+            organisation.setCreatedBy(creator);
+
+            save(organisation);
+
+            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
+                createWorkspaceFoldersForOrganisation(organisation, userID, createDateTime);
+            }
+
+            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
+                Organisation pOrg = organisation.getParentOrganisation();
+                // set parent's child orgs
+                Set children = pOrg.getChildOrganisations();
+                if (children == null) {
+                    children = new HashSet();
+                }
+                children.add(organisation);
+                pOrg.setChildOrganisations(children);
+                // get course managers and give them staff role in this new
+                // class
+                Vector < UserDTO > managers = getUsersFromOrganisationByRole(pOrg.getOrganisationId(), Role.GROUP_MANAGER,
+                    false);
+                for (UserDTO m: managers) {
+                    if (m.getUserID() == userID) {
+                        User user = (User) findById(User.class, m.getUserID());
+                        UserOrganisation uo = new UserOrganisation(user, organisation);
+                        log.debug("adding course manager: " + user.getUserId() + " as staff");
+                        UserOrganisationRole uor = new UserOrganisationRole(uo,
+                            (Role) findById(Role.class, Role.ROLE_MONITOR));
+                        HashSet uors = new HashSet();
+                        uors.add(uor);
+                        uo.setUserOrganisationRoles(uors);
+
+                        // attach new UserOrganisation to the Organisation, then
+                        // save the UserOrganisation.
+                        // this way the Set Organisations.userOrganisations contains
+                        // persisted objects,
+                        // and we can safely add new UserOrganisations if necessary
+                        // (i.e. if there are
+                        // several course managers).
+                        Set uos = organisation.getUserOrganisations();
+                        if (uos == null) {
+                            uos = new HashSet();
+                        }
+                        uos.add(uo);
+                        organisation.setUserOrganisations(uos);
+
+                        save(uo);
+                    }
+                }
+            }
+        } else {
+            // update workspace/folder names
+            WorkspaceFolder folder = organisation.getNormalFolder();
+            if (folder != null) {
+                folder.setName(organisation.getName());
+            }
+            folder = organisation.getRunSequencesFolder();
+            if (folder != null) {
+                folder.setName(getRunSequencesFolderName(organisation.getName()));
+            }
+        }
+
+        return organisation;
+    }
+
+    @Override
     public void delete(Object object) {
         baseDAO.delete(object);
     }
@@ -255,17 +296,17 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
-    public <T> List<T> findByPropertyValues(Class<T> clazz, String name, Collection<?> values) {
+    public < T > List < T > findByPropertyValues(Class < T > clazz, String name, Collection < ? > values) {
         return baseDAO.findByPropertyValues(clazz, name, values);
     }
 
     @Override
-    public List findByProperties(Class clazz, Map <String, Object> properties) {
+    public List findByProperties(Class clazz, Map < String, Object > properties) {
         return findByProperties(clazz, properties, false);
     }
 
     @Override
-    public List findByProperties(Class clazz, Map <String, Object> properties, boolean cache) {
+    public List findByProperties(Class clazz, Map < String, Object > properties, boolean cache) {
         return baseDAO.findByProperties(clazz, properties, cache);
     }
 
@@ -287,7 +328,8 @@ public class UserManagementService implements IUserManagementService, Initializi
         }
 
         // it's ugly to put query string here, but it is a convention of this class so let's stick to it for now
-        String query = "SELECT uo.user FROM UserOrganisation uo INNER JOIN uo.userOrganisationRoles r WHERE uo.organisation.organisationId=" +
+        String query =
+            "SELECT uo.user FROM UserOrganisation uo INNER JOIN uo.userOrganisationRoles r WHERE uo.organisation.organisationId=" +
             organisationID + " AND r.role.name= '" + roleName + "'";
         List < User > queryResult = baseDAO.find(query);
 
@@ -384,12 +426,12 @@ public class UserManagementService implements IUserManagementService, Initializi
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map<Integer, Set<Integer>> getRolesForUser(Integer userId) {
-        return ((List<UserOrganisation>) findByProperty(UserOrganisation.class, "user.userId", userId)).stream()
+    public Map < Integer, Set < Integer >> getRolesForUser(Integer userId) {
+        return ((List < UserOrganisation > ) findByProperty(UserOrganisation.class, "user.userId", userId)).stream()
             .collect(Collectors.toMap(userOrganisation -> userOrganisation.getOrganisation().getOrganisationId(),
                 userOrganisation -> userOrganisation.getUserOrganisationRoles().stream()
-                    .map(userOrganisationRole -> userOrganisationRole.getRole().getRoleId())
-                    .collect(Collectors.toSet())));
+                .map(userOrganisationRole -> userOrganisationRole.getRole().getRoleId())
+                .collect(Collectors.toSet())));
     }
 
     @Override
@@ -399,6 +441,16 @@ public class UserManagementService implements IUserManagementService, Initializi
         properties.put("organisation.organisationType.organisationTypeId", typeId);
         properties.put("organisation.organisationState.organisationStateId", stateId);
         return baseDAO.findByProperties(UserOrganisation.class, properties);
+    }
+
+    /**
+     * Checks if given user has got any roles in any organisation.
+     */
+    @Override
+    public boolean hasUserAnyRoles(Integer userId) {
+        Map < String, Object > properties = new HashMap < > ();
+        properties.put("userOrganisation.user.userId", userId);
+        return baseDAO.countByProperties(UserOrganisationRole.class, properties) > 0;
     }
 
     @Override
@@ -507,80 +559,6 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Organisation saveOrganisation(Organisation organisation, Integer userID) {
-
-        User creator = (User) findById(User.class, userID);
-
-        if (organisation.getOrganisationId() == null) {
-            Date createDateTime = new Date();
-            organisation.setCreateDate(createDateTime);
-            organisation.setCreatedBy(creator);
-
-            save(organisation);
-
-            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
-                createWorkspaceFoldersForOrganisation(organisation, userID, createDateTime);
-            }
-
-            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
-                Organisation pOrg = organisation.getParentOrganisation();
-                // set parent's child orgs
-                Set children = pOrg.getChildOrganisations();
-                if (children == null) {
-                    children = new HashSet();
-                }
-                children.add(organisation);
-                pOrg.setChildOrganisations(children);
-                // get course managers and give them staff role in this new
-                // class
-                Vector < UserDTO > managers = getUsersFromOrganisationByRole(pOrg.getOrganisationId(), Role.GROUP_MANAGER,
-                    false);
-                for (UserDTO m: managers) {
-                    if (m.getUserID() == userID) {
-                        User user = (User) findById(User.class, m.getUserID());
-                        UserOrganisation uo = new UserOrganisation(user, organisation);
-                        log.debug("adding course manager: " + user.getUserId() + " as staff");
-                        UserOrganisationRole uor = new UserOrganisationRole(uo,
-                            (Role) findById(Role.class, Role.ROLE_MONITOR));
-                        HashSet uors = new HashSet();
-                        uors.add(uor);
-                        uo.setUserOrganisationRoles(uors);
-
-                        // attach new UserOrganisation to the Organisation, then
-                        // save the UserOrganisation.
-                        // this way the Set Organisations.userOrganisations contains
-                        // persisted objects,
-                        // and we can safely add new UserOrganisations if necessary
-                        // (i.e. if there are
-                        // several course managers).
-                        Set uos = organisation.getUserOrganisations();
-                        if (uos == null) {
-                            uos = new HashSet();
-                        }
-                        uos.add(uo);
-                        organisation.setUserOrganisations(uos);
-
-                        save(uo);
-                    }
-                }
-            }
-        } else {
-            // update workspace/folder names
-            WorkspaceFolder folder = organisation.getNormalFolder();
-            if (folder != null) {
-                folder.setName(organisation.getName());
-            }
-            folder = organisation.getRunSequencesFolder();
-            if (folder != null) {
-                folder.setName(getRunSequencesFolderName(organisation.getName()));
-            }
-        }
-
-        return organisation;
-    }
-
-    @Override
     public void updateOrganisationAndWorkspaceFolderNames(Organisation organisation) {
         baseDAO.update(organisation);
         WorkspaceFolder folder = organisation.getNormalFolder();
@@ -595,10 +573,11 @@ public class UserManagementService implements IUserManagementService, Initializi
         // get i18n'd message according to server locale
         String[] tokenisedLocale = LanguageUtil.getDefaultLangCountry();
         Locale serverLocale = new Locale(tokenisedLocale[0], tokenisedLocale[1]);
-        String runSeqName = messageService.getMessageSource().getMessage(
-            UserManagementService.SEQUENCES_FOLDER_NAME_KEY, new Object[] {
-                workspaceName
-            }, serverLocale);
+        String runSeqName = messageService.getMessageSource()
+            .getMessage(UserManagementService.SEQUENCES_FOLDER_NAME_KEY, new Object[] {
+                    workspaceName
+                },
+                serverLocale);
 
         if ((runSeqName != null) && runSeqName.startsWith("???")) {
             log.warn("Problem in the language file - can't find an entry for " +
@@ -648,6 +627,7 @@ public class UserManagementService implements IUserManagementService, Initializi
             log.debug("deleting user " + user.getLogin());
             delete(user);
 
+            AuditLogFilter.log(AuditLogFilter.USER_DELETE_ACTION, "user login: " + user.getLogin());
         } else {
             log.error("Requested delete of a user who does not exist. User ID " + userId);
         }
@@ -683,9 +663,17 @@ public class UserManagementService implements IUserManagementService, Initializi
 
     @Override
     public void disableUser(Integer userId) {
+        disableUser(userId, false);
+    }
+
+    @Override
+    public void disableUser(Integer userId, boolean skipLog) {
         User user = (User) findById(User.class, userId);
+        if (user.getDisabledFlag()) {
+            return;
+        }
         user.setDisabledFlag(true);
-        log.debug("disabling user " + user.getLogin());
+        log.info("disabling user " + user.getLogin());
         saveUser(user);
 
         Set uos = user.getUserOrganisations();
@@ -695,6 +683,10 @@ public class UserManagementService implements IUserManagementService, Initializi
             log.debug("removing membership of: " + uo.getOrganisation().getName());
             delete(uo);
             iter.remove();
+        }
+
+        if (!skipLog) {
+            AuditLogFilter.log(AuditLogFilter.USER_DISABLE_ACTION, "user login: " + user.getLogin());
         }
     }
 
@@ -737,13 +729,6 @@ public class UserManagementService implements IUserManagementService, Initializi
             log.debug("added " + user.getLogin() + " to " + org.getName());
         }
 
-        // if user is to be added to a class, make user a member of parent
-        // course also if not already
-        if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE) &&
-            (getUserOrganisation(user.getUserId(), org.getParentOrganisation().getOrganisationId()) == null)) {
-            setRolesForUserOrganisation(user, org.getParentOrganisation(), rolesList, checkGroupManagerRoles);
-        }
-
         List < String > rolesCopy = new ArrayList < > ();
         rolesCopy.addAll(rolesList);
         log.debug("rolesList.size: " + rolesList.size());
@@ -777,13 +762,21 @@ public class UserManagementService implements IUserManagementService, Initializi
             log.debug("setting role: " + role.getName() + " in organisation: " + org.getName());
             uors.add(uor);
             // when a user gets these roles, they need a workspace
-            if (role.getName().equals(Role.AUTHOR) || role.getName().equals(Role.SYSADMIN)) {
+            if (role.getName().equals(Role.AUTHOR) || role.getName().equals(Role.APPADMIN)) {
                 if (user.getWorkspaceFolder() == null) {
                     createWorkspaceFolderForUser(user);
                 }
             }
         }
         if (uors.isEmpty()) {
+            user.getUserOrganisations().remove(uo);
+            Iterator < UserOrganisation > userOrganisationIterator = org.getUserOrganisations().iterator();
+            while (userOrganisationIterator.hasNext()) {
+                if (uo.getUserOrganisationId().equals(userOrganisationIterator.next().getUserOrganisationId())) {
+                    userOrganisationIterator.remove();
+                    break;
+                }
+            }
             delete(uo);
         } else {
             uo.setUserOrganisationRoles(uors);
@@ -791,21 +784,32 @@ public class UserManagementService implements IUserManagementService, Initializi
         }
 
         if (checkGroupManagerRoles) {
-            // make sure group managers have monitor and learner in each subgroup
+            // make sure group managers have monitor in each subgroup
             checkGroupManager(user, org);
+        }
+
+        // if user is to be added to a class, make user a member of parent
+        // course also if not already
+        if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
+            Set < String > parentOrganisationRoleSet = getUserOrganisationRoles(
+                    org.getParentOrganisation().getOrganisationId(), user.getLogin()).stream()
+                .map(uor -> uor.getRole().getRoleId().toString()).collect(Collectors.toSet());
+            parentOrganisationRoleSet.addAll(rolesList);
+            setRolesForUserOrganisation(user, org.getParentOrganisation(), new ArrayList < > (parentOrganisationRoleSet),
+                checkGroupManagerRoles);
         }
     }
 
     private void checkGroupManager(User user, Organisation org) {
-//         if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
-//             if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org)) {
-//                 setRolesForGroupManager(user, org.getChildOrganisations());
-//             }
-//         } else if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
-//             if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org.getParentOrganisation())) {
-//                 setRolesForGroupManager(user, org.getParentOrganisation().getChildOrganisations());
-//             }
-//         }
+        if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
+            if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org)) {
+                setRolesForGroupManager(user, org.getChildOrganisations());
+            }
+        } else if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
+            if (hasRoleInOrganisation(user, Role.ROLE_GROUP_MANAGER, org.getParentOrganisation())) {
+                setRolesForGroupManager(user, org.getParentOrganisation().getChildOrganisations());
+            }
+        }
     }
 
     private void setRolesForGroupManager(User user, Set childOrgs) {
@@ -821,9 +825,8 @@ public class UserManagementService implements IUserManagementService, Initializi
                 uos.add(uo);
                 log.debug("added " + user.getLogin() + " to " + org.getName());
                 uo = setRoleForUserOrganisation(uo, (Role) findById(Role.class, Role.ROLE_MONITOR));
-                uo = setRoleForUserOrganisation(uo, (Role) findById(Role.class, Role.ROLE_LEARNER));
                 save(uo);
-                return;
+                continue;
             }
 
             // iterate through roles and add monitor and learner if don't
@@ -831,22 +834,14 @@ public class UserManagementService implements IUserManagementService, Initializi
             Set < UserOrganisationRole > uors = uo.getUserOrganisationRoles();
             if ((uors != null) && !uors.isEmpty()) {
                 boolean isMonitor = false;
-                boolean isLearner = false;
                 for (UserOrganisationRole uor: uors) {
                     if (uor.getRole().getName().equals(Role.MONITOR)) {
                         isMonitor = true;
-                    } else if (uor.getRole().getName().equals(Role.LEARNER)) {
-                        isLearner = true;
-                    }
-                    if (isMonitor && isLearner) {
                         break;
                     }
                 }
                 if (!isMonitor) {
                     uo = setRoleForUserOrganisation(uo, (Role) findById(Role.class, Role.ROLE_MONITOR));
-                }
-                if (!isLearner) {
-                    uo = setRoleForUserOrganisation(uo, (Role) findById(Role.class, Role.ROLE_LEARNER));
                 }
                 save(uo);
             }
@@ -857,18 +852,20 @@ public class UserManagementService implements IUserManagementService, Initializi
         UserOrganisationRole uor = new UserOrganisationRole(uo, role);
         save(uor);
         uo.addUserOrganisationRole(uor);
-        log.debug("setting role: " + uor.getRole().getName() + " in organisation: " +
-            uor.getUserOrganisation().getOrganisation().getName());
+        log.debug("setting role: " + uor.getRole().getName() + " in organisation: " + uor.getUserOrganisation()
+            .getOrganisation().getName());
         return uo;
     }
 
     @Override
-    public List < Role > filterRoles(List < Role > rolelist, Boolean isSysadmin, OrganisationType orgType) {
+    public List < Role > filterRoles(List < Role > rolelist, Boolean isAppadmin, OrganisationType orgType) {
         List < Role > allRoles = new ArrayList < > ();
         allRoles.addAll(rolelist);
         Role role = new Role();
-        if (!orgType.getOrganisationTypeId().equals(OrganisationType.ROOT_TYPE) || !isSysadmin) {
+        if (!orgType.getOrganisationTypeId().equals(OrganisationType.ROOT_TYPE) || !isAppadmin) {
             role.setRoleId(Role.ROLE_SYSADMIN);
+            allRoles.remove(role);
+            role.setRoleId(Role.ROLE_APPADMIN);
             allRoles.remove(role);
         } else {
             role.setRoleId(Role.ROLE_AUTHOR);
@@ -932,7 +929,7 @@ public class UserManagementService implements IUserManagementService, Initializi
             save(org);
             user.getUserOrganisations().remove(uo);
             log.debug("Removed user " + user.getUserId() + " from organisation " + org.getOrganisationId());
-            if (org.getOrganisationType().equals(OrganisationType.COURSE_TYPE)) {
+            if (org.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
                 deleteChildUserOrganisations(user, org);
             }
         }
@@ -952,9 +949,23 @@ public class UserManagementService implements IUserManagementService, Initializi
 
     @Override
     public boolean isUserSysAdmin() {
+        return isUserSysAdmin(getRequestorId());
+    }
+
+    @Override
+    public boolean isUserSysAdmin(Integer userId) {
+        Integer rootOrgId = getRootOrganisation().getOrganisationId();
+        return userId != null && isUserInRole(userId, rootOrgId, Role.SYSADMIN);
+    }
+
+    @Override
+    public boolean isUserAppAdmin() {
+        if (isUserSysAdmin()) {
+            return true;
+        }
         Integer rootOrgId = getRootOrganisation().getOrganisationId();
         Integer requestorId = getRequestorId();
-        return requestorId != null ? isUserInRole(requestorId, rootOrgId, Role.SYSADMIN) : false;
+        return requestorId != null ? isUserInRole(requestorId, rootOrgId, Role.APPADMIN) : false;
     }
 
     @Override
@@ -1037,14 +1048,14 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
-    public List < OrganisationDTO > getActiveCoursesByUser(Integer userId, boolean isSysadmin, int page, int size,
+    public List < OrganisationDTO > getActiveCoursesByUser(Integer userId, boolean isAppadmin, int page, int size,
         String searchString) {
-        return organisationDAO.getActiveCoursesByUser(userId, isSysadmin, page, size, searchString);
+        return organisationDAO.getActiveCoursesByUser(userId, isAppadmin, page, size, searchString);
     }
 
     @Override
-    public int getCountActiveCoursesByUser(Integer userId, boolean isSysadmin, String searchString) {
-        return organisationDAO.getCountActiveCoursesByUser(userId, isSysadmin, searchString);
+    public int getCountActiveCoursesByUser(Integer userId, boolean isAppadmin, String searchString) {
+        return organisationDAO.getCountActiveCoursesByUser(userId, isAppadmin, searchString);
     }
 
     @Override
@@ -1111,7 +1122,7 @@ public class UserManagementService implements IUserManagementService, Initializi
 
     @Override
     public boolean canEditGroup(Integer userId, Integer orgId) {
-        if (isUserSysAdmin() || isUserGlobalGroupManager()) {
+        if (isUserAppAdmin() || isUserGlobalGroupManager()) {
             return true;
         }
         Organisation org = (Organisation) findById(Organisation.class, orgId);
@@ -1150,16 +1161,14 @@ public class UserManagementService implements IUserManagementService, Initializi
      * at the same time as retrieving the tool data, rather than making a separate lookup.
      *
      * The return values are the entry for the select clause (will always have a leading space but no trailing comma and
-     * an
-     * alias of luser) and the sql join clause, which should go with any other join clauses.
+     * an alias of luser) and the sql join clause, which should go with any other join clauses.
      *
-     * To convert the portrait id set up the sql -> java object translation using
-     * addScalar("portraitId", IntegerType.INSTANCE)
+     * To convert the portrait id set up the sql -> java object translation using addScalar("portraitId",
+     * IntegerType.INSTANCE)
      *
      * @param userIdString
-     *            User identifier field string e.g. user.user_id
+     * 	User identifier field string e.g. user.user_id
      * @return String[] { partial select string, join clause }
-     *
      */
     @Override
     public String[] getPortraitSQL(String userIdString) {
@@ -1216,34 +1225,34 @@ public class UserManagementService implements IUserManagementService, Initializi
                 FileInputStream is = new FileInputStream(portraitFile);
                 String fileNameWithoutExt = login;
                 NodeKey originalFileNode = centralToolContentHandler.uploadFile(is,
-                    fileNameWithoutExt + "_original.jpg", "image/jpeg", true);
+                    fileNameWithoutExt + "_original.jpg", "image/jpeg");
                 is.close();
-                log.debug("Saved original portrait with uuid: " + originalFileNode.getUuid() + " and version: " +
+                log.debug("Saved original portrait with uuid: " + originalFileNode.getNodeId() + " and version: " +
                     originalFileNode.getVersion());
 
                 //resize to the large size
                 is = new FileInputStream(portraitFile);
                 InputStream modifiedPortraitInputStream = ResizePictureUtil.resize(is,
                     CommonConstants.PORTRAIT_LARGEST_DIMENSION_LARGE);
-                NodeKey node = centralToolContentHandler.updateFile(originalFileNode.getUuid(),
+                NodeKey node = centralToolContentHandler.updateFile(originalFileNode.getNodeId(),
                     modifiedPortraitInputStream, fileNameWithoutExt + "_large.jpg", "image/jpeg");
                 modifiedPortraitInputStream.close();
                 is.close();
                 if (log.isDebugEnabled()) {
-                    log.debug(
-                        "Saved large portrait with uuid: " + node.getUuid() + " and version: " + node.getVersion());
+                    log.debug("Saved large portrait with uuid: " + node.getNodeId() + " and version: " +
+                        node.getVersion());
                 }
 
                 //resize to the medium size
                 is = new FileInputStream(portraitFile);
                 modifiedPortraitInputStream = ResizePictureUtil.resize(is,
                     CommonConstants.PORTRAIT_LARGEST_DIMENSION_MEDIUM);
-                node = centralToolContentHandler.updateFile(node.getUuid(), modifiedPortraitInputStream,
+                node = centralToolContentHandler.updateFile(node.getNodeId(), modifiedPortraitInputStream,
                     fileNameWithoutExt + "_medium.jpg", "image/jpeg");
                 modifiedPortraitInputStream.close();
                 is.close();
                 if (log.isDebugEnabled()) {
-                    log.debug("Saved medium portrait with uuid: " + node.getUuid() + " and version: " +
+                    log.debug("Saved medium portrait with uuid: " + node.getNodeId() + " and version: " +
                         node.getVersion());
                 }
 
@@ -1251,19 +1260,19 @@ public class UserManagementService implements IUserManagementService, Initializi
                 is = new FileInputStream(portraitFile);
                 modifiedPortraitInputStream = ResizePictureUtil.resize(is,
                     CommonConstants.PORTRAIT_LARGEST_DIMENSION_SMALL);
-                node = centralToolContentHandler.updateFile(node.getUuid(), modifiedPortraitInputStream,
+                node = centralToolContentHandler.updateFile(node.getNodeId(), modifiedPortraitInputStream,
                     fileNameWithoutExt + "_small.jpg", "image/jpeg");
                 modifiedPortraitInputStream.close();
                 is.close();
                 if (log.isDebugEnabled()) {
-                    log.debug(
-                        "Saved small portrait with uuid: " + node.getUuid() + " and version: " + node.getVersion());
+                    log.debug("Saved small portrait with uuid: " + node.getNodeId() + " and version: " +
+                        node.getVersion());
                 }
                 // delete old portrait file (we only want to keep the user's current portrait)
                 if (user.getPortraitUuid() != null) {
                     centralToolContentHandler.deleteFile(user.getPortraitUuid());
                 }
-                user.setPortraitUuid(UUID.fromString(originalFileNode.getPortraitUuid()));
+                user.setPortraitUuid(UUID.fromString(originalFileNode.getUuid()));
                 saveUser(user);
 
                 log.info("Uploaded portrait for user " + userId + " with login \"" + login + "\"");
@@ -1317,8 +1326,8 @@ public class UserManagementService implements IUserManagementService, Initializi
 
     private ILogEventService getLogEventService() {
         if (UserManagementService.logEventService == null) {
-            WebApplicationContext ctx = WebApplicationContextUtils
-                .getWebApplicationContext(SessionManager.getServletContext());
+            WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(
+                SessionManager.getServletContext());
             UserManagementService.logEventService = (ILogEventService) ctx.getBean("logEventService");
         }
         return UserManagementService.logEventService;

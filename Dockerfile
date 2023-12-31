@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.13_8
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.21_9
 
 WORKDIR /app
 
@@ -31,16 +31,16 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
-    && git checkout 44ce7317aba2452785d16ba649d88f79a7783783
-
-ADD  ./lams_central/conf/security/Owasp.CsrfGuard.properties /app/lams/lams_central/conf/security/Owasp.CsrfGuard.properties
+    && git checkout e54b402590b4f27560c1a632a65f1082bf9729fd
 
 ADD ./lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java /app/lams/lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java
 
 ADD ./lams_build/common.properties lams/lams_build/common.properties
 ADD ./lams_build/unix.properties lams/lams_build/unix.properties
 
+ADD ./lams_common/db/sql/create_lams_11_tables.sql /app/lams/lams_common/db/sql/create_lams_11_tables.sql
 ADD ./lams_common/db/sql/insert_lams_users.sql /app/lams/lams_common/db/sql/insert_lams_users.sql
+ADD ./lams_common/db/sql/insert_types_data.sql /app/lams/lams_common/db/sql/insert_types_data.sql
 ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/SsoHandler.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/integration/security/LDAPAuthenticator.java
 ADD ./lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java /app/lams/lams_common/src/java/org/lamsfoundation/lams/usermanagement/service/LdapService.java
@@ -52,15 +52,8 @@ ADD ./lams_central/conf/scss/_lams_variables_sch.scss /app/lams/lams_central/con
 ADD ./lams_central/conf/scss/_bootstrap-variables_sch.scss /app/lams/lams_central/conf/scss/_bootstrap-variables_sch.scss
 ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/favicon/lams/favicon.ico
 ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app/lams/lams_central/conf/language/lams/ApplicationResources_el_GR.properties
-ADD ./lams_central/src/java/org/lamsfoundation/lams/web/IndexController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/IndexController.java
 ADD ./lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java
-ADD ./lams_central/src/java/org/lamsfoundation/lams/web/DisplayGroupController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/DisplayGroupController.java
 ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java
-
-ADD ./lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/web/controller/LearningController.java /app/lams/lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/web/controller/LearningController.java
-#RUN sed -i 's/request.setAttribute("userIdParam", mindmapUser.getUid());/if (request != null \&\& mindmapUser != null) { request.setAttribute("userIdParam", mindmapUser.getUid()); }/g' /app/lams/lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/web/controller/LearningController.java
-RUN sed -i 's/name="userId" value="${userIdParam}"/name="userUid" value="${userIdParam}"/g' /app/lams/lams_tool_mindmap/web/pages/learning/mindmap.jsp
-RUN sed -i 's/data-src=/data-src/g' /app/lams/lams_tool_mindmap/web/pages/monitoring/summary.jsp
 
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
@@ -70,10 +63,6 @@ RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_adm
 ADD ./lams_central/web /tmp/lams_central_web
 RUN cp -R /tmp/lams_central_web/* /app/lams/lams_central/web && rm -fR /tmp/lams_central_web \
     && cd /app/lams/lams_central && ant sass.compile
-
-ADD ./lams_monitoring/web /tmp/lams_monitoring_web
-RUN cp -R /tmp/lams_monitoring_web/* /app/lams/lams_monitoring/web && rm -fR /tmp/lams_monitoring_web \
-    && cd /app/lams/lams_monitoring && ant sass.compile
 
 ADD ./lams_www/web /tmp/lams_www_web
 RUN cp -R /tmp/lams_www_web/* /app/lams/lams_www/web && rm -fR /tmp/lams_www_web
