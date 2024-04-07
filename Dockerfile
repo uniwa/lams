@@ -89,7 +89,7 @@ RUN cd lams/lams_build/ \
     && mysql -uroot -e "create database lams_docker_setup_db" \
     #&& sed -i '/target="build-db"/d' ./build.xml \
     #&& sed -i '/<property file="build.properties"\/>/i <property environment="env" \/>' ./build.xml \
-    && ant deploy-lams
+    && ant deploy-lams-all-tools
 
 ADD ./docker/jwt/public.pem /docker/jwt/public.pem
 ADD ./docker/conf/supervisord.conf /etc/supervisor/supervisord.conf
