@@ -46,7 +46,7 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.lamsfoundation.lams.integration.security.RandomPasswordGenerator;
-import org.lamsfoundation.lams.timezone.service.ITimezoneService;
+import org.lamsfoundation.lams.timezone.TimeZoneUtil;
 import org.lamsfoundation.lams.usermanagement.AuthenticationMethod;
 import org.lamsfoundation.lams.usermanagement.Organisation;
 import org.lamsfoundation.lams.usermanagement.OrganisationState;
@@ -59,6 +59,24 @@ import org.lamsfoundation.lams.util.ConfigurationKeys;
 import org.lamsfoundation.lams.util.HashUtil;
 import org.lamsfoundation.lams.util.LanguageUtil;
 
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
+import javax.naming.ldap.Control;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.PagedResultsControl;
+import javax.naming.ldap.PagedResultsResponseControl;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -79,8 +97,6 @@ public class LdapService implements ILdapService {
 
     private IUserManagementService service;
 
-    private ITimezoneService timezoneService;
-
     private static final int BULK_UPDATE_CREATED = 0;
 
     private static final int BULK_UPDATE_UPDATED = 1;
@@ -89,41 +105,41 @@ public class LdapService implements ILdapService {
 
     @Override
     public void updateLDAPUser(User user, Attributes attrs) {
-	HashMap<String, String> map = getLDAPUserAttributes(attrs);
-	user.setLogin(map.get("login"));
-	user.setFirstName(map.get("fname"));
-	user.setLastName(map.get("lname"));
-	user.setEmail(map.get("email"));
-	user.setAddressLine1(map.get("address1"));
-	user.setAddressLine2(map.get("address2"));
-	user.setAddressLine3(map.get("address3"));
-	user.setCity(map.get("city"));
-	user.setState(map.get("state"));
-	user.setPostcode(map.get("postcode"));
-	user.setCountry(map.get("country"));
-	user.setDayPhone(map.get("dayphone"));
-	user.setEveningPhone(map.get("eveningphone"));
-	user.setFax(map.get("fax"));
-	user.setMobilePhone(map.get("mobile"));
-	user.setLocale(getLocale(map.get("locale")));
-	user.setDisabledFlag(getDisabledBoolean(attrs));
-	service.saveUser(user);
+        HashMap < String, String > map = getLDAPUserAttributes(attrs);
+        user.setLogin(map.get("login"));
+        user.setFirstName(map.get("fname"));
+        user.setLastName(map.get("lname"));
+        user.setEmail(map.get("email"));
+        user.setAddressLine1(map.get("address1"));
+        user.setAddressLine2(map.get("address2"));
+        user.setAddressLine3(map.get("address3"));
+        user.setCity(map.get("city"));
+        user.setState(map.get("state"));
+        user.setPostcode(map.get("postcode"));
+        user.setCountry(map.get("country"));
+        user.setDayPhone(map.get("dayphone"));
+        user.setEveningPhone(map.get("eveningphone"));
+        user.setFax(map.get("fax"));
+        user.setMobilePhone(map.get("mobile"));
+        user.setLocale(getLocale(map.get("locale")));
+        user.setDisabledFlag(getDisabledBoolean(attrs));
+        service.saveUser(user);
     }
 
     // tries to match ldap attribute to a locale, otherwise returns server
     // default
     private SupportedLocale getLocale(String attribute) {
-	if ((attribute != null) && (attribute.trim().length() > 0)) {
-	    int index = attribute.indexOf("_");
-	    if (index > 0) {
-		String language = attribute.substring(0, index);
-		String country = attribute.substring(index);
-		return LanguageUtil.getSupportedLocale(language, country);
-	    } else {
-		return LanguageUtil.getSupportedLocale(attribute);
-	    }
-	}
-	return LanguageUtil.getDefaultLocale();
+        if ((attribute != null) && (attribute.trim().length() > 0)) {
+            int index = attribute.indexOf("_");
+            if (index > 0) {
+                String language = attribute.substring(0, index);
+                String country = attribute.substring(index);
+                return LanguageUtil.getSupportedLocale(language, country);
+            } else {
+                return LanguageUtil.getSupportedLocale(attribute);
+            }
+        }
+        return LanguageUtil.getDefaultLocale();
     }
 
     @Override
@@ -164,7 +180,7 @@ public class LdapService implements ILdapService {
 		user.setDisabledFlag(getDisabledBoolean(attrs));
 		user.setCreateDate(new Date());
 		user.setLocale(getLocale(map.get("locale")));
-		user.setTimeZone(timezoneService.getServerTimezone().getTimezoneId());
+		user.setTimeZone(TimeZoneUtil.getServerTimeZone());
 		user.setFirstLogin(true);
 		service.saveUser(user);
 		service.logUserCreated(user, (User) null);
@@ -178,129 +194,129 @@ public class LdapService implements ILdapService {
 	return false;
     }
 
-    private HashMap<String, String> getLDAPUserAttributes(Attributes attrs) {
-	HashMap<String, String> map = new HashMap<String, String>();
-	try {
-	    map.put("login", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR))));
-	    map.put("fname",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_FIRST_NAME_ATTR))));
-	    map.put("lname",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LAST_NAME_ATTR))));
-	    map.put("email", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_EMAIL_ATTR))));
-	    map.put("address1",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR1_ATTR))));
-	    map.put("address2",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR2_ATTR))));
-	    map.put("address3",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR3_ATTR))));
-	    map.put("city", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_CITY_ATTR))));
-	    map.put("state", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_STATE_ATTR))));
-	    map.put("postcode",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_POSTCODE_ATTR))));
-	    map.put("country",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_COUNTRY_ATTR))));
-	    map.put("dayphone",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_DAY_PHONE_ATTR))));
-	    map.put("eveningphone",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_EVENING_PHONE_ATTR))));
-	    map.put("fax", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_FAX_ATTR))));
-	    map.put("mobile",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_MOBILE_ATTR))));
-	    map.put("locale",
-		    getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOCALE_ATTR))));
-	    map.put("disabled", getSingleAttributeString(
-		    attrs.get(getLdapAttr(Configuration.get(ConfigurationKeys.LDAP_DISABLED_ATTR)))));
-	} catch (Exception e) {
-	    log.error("===> Exception occurred while getting LDAP user attributes: ", e);
-	}
+    private HashMap < String, String > getLDAPUserAttributes(Attributes attrs) {
+        HashMap < String, String > map = new HashMap < String, String > ();
+        try {
+            map.put("login", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOGIN_ATTR))));
+            map.put("fname",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_FIRST_NAME_ATTR))));
+            map.put("lname",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LAST_NAME_ATTR))));
+            map.put("email", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_EMAIL_ATTR))));
+            map.put("address1",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR1_ATTR))));
+            map.put("address2",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR2_ATTR))));
+            map.put("address3",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_ADDR3_ATTR))));
+            map.put("city", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_CITY_ATTR))));
+            map.put("state", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_STATE_ATTR))));
+            map.put("postcode",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_POSTCODE_ATTR))));
+            map.put("country",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_COUNTRY_ATTR))));
+            map.put("dayphone",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_DAY_PHONE_ATTR))));
+            map.put("eveningphone",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_EVENING_PHONE_ATTR))));
+            map.put("fax", getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_FAX_ATTR))));
+            map.put("mobile",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_MOBILE_ATTR))));
+            map.put("locale",
+                getSingleAttributeString(attrs.get(Configuration.get(ConfigurationKeys.LDAP_LOCALE_ATTR))));
+            map.put("disabled", getSingleAttributeString(
+                attrs.get(getLdapAttr(Configuration.get(ConfigurationKeys.LDAP_DISABLED_ATTR)))));
+        } catch (Exception e) {
+            log.error("===> Exception occurred while getting LDAP user attributes: ", e);
+        }
 
-	// field validation; trim values before they get to database
-	if ((map.get("login") != null) && (map.get("login").trim().length() > 255)) {
-	    map.put("login", map.get("login").substring(0, 255));
-	}
-	if ((map.get("fname") != null) && (map.get("fname").trim().length() > 128)) {
-	    map.put("fname", map.get("fname").substring(0, 128));
-	}
-	if ((map.get("lname") != null) && (map.get("lname").trim().length() > 128)) {
-	    map.put("lname", map.get("lname").substring(0, 128));
-	}
-	if ((map.get("email") != null) && (map.get("email").trim().length() > 128)) {
-	    map.put("email", map.get("email").substring(0, 128));
-	}
-	if ((map.get("address1") != null) && (map.get("address1").trim().length() > 64)) {
-	    map.put("address1", map.get("address1").substring(0, 64));
-	}
-	if ((map.get("address2") != null) && (map.get("address2").trim().length() > 64)) {
-	    map.put("address2", map.get("address2").substring(0, 64));
-	}
-	if ((map.get("address3") != null) && (map.get("address3").trim().length() > 64)) {
-	    map.put("address3", map.get("address3").substring(0, 64));
-	}
-	if ((map.get("city") != null) && (map.get("city").trim().length() > 64)) {
-	    map.put("city", map.get("city").substring(0, 64));
-	}
-	if ((map.get("state") != null) && (map.get("state").trim().length() > 64)) {
-	    map.put("state", map.get("state").substring(0, 64));
-	}
-	if ((map.get("postcode") != null) && (map.get("postcode").trim().length() > 10)) {
-	    map.put("postcode", map.get("postcode").substring(0, 10));
-	}
-	if ((map.get("country") != null) && (map.get("country").trim().length() > 64)) {
-	    map.put("country", map.get("country").substring(0, 64));
-	}
-	if ((map.get("dayphone") != null) && (map.get("dayphone").trim().length() > 64)) {
-	    map.put("dayphone", map.get("dayphone").substring(0, 64));
-	}
-	if ((map.get("eveningphone") != null) && (map.get("eveningphone").trim().length() > 64)) {
-	    map.put("eveningphone", map.get("eveningphone").substring(0, 64));
-	}
-	if ((map.get("fax") != null) && (map.get("fax").trim().length() > 64)) {
-	    map.put("fax", map.get("fax").substring(0, 64));
-	}
-	if ((map.get("mobile") != null) && (map.get("mobile").trim().length() > 64)) {
-	    map.put("mobile", map.get("mobile").substring(0, 64));
-	}
+        // field validation; trim values before they get to database
+        if ((map.get("login") != null) && (map.get("login").trim().length() > 255)) {
+            map.put("login", map.get("login").substring(0, 255));
+        }
+        if ((map.get("fname") != null) && (map.get("fname").trim().length() > 128)) {
+            map.put("fname", map.get("fname").substring(0, 128));
+        }
+        if ((map.get("lname") != null) && (map.get("lname").trim().length() > 128)) {
+            map.put("lname", map.get("lname").substring(0, 128));
+        }
+        if ((map.get("email") != null) && (map.get("email").trim().length() > 128)) {
+            map.put("email", map.get("email").substring(0, 128));
+        }
+        if ((map.get("address1") != null) && (map.get("address1").trim().length() > 64)) {
+            map.put("address1", map.get("address1").substring(0, 64));
+        }
+        if ((map.get("address2") != null) && (map.get("address2").trim().length() > 64)) {
+            map.put("address2", map.get("address2").substring(0, 64));
+        }
+        if ((map.get("address3") != null) && (map.get("address3").trim().length() > 64)) {
+            map.put("address3", map.get("address3").substring(0, 64));
+        }
+        if ((map.get("city") != null) && (map.get("city").trim().length() > 64)) {
+            map.put("city", map.get("city").substring(0, 64));
+        }
+        if ((map.get("state") != null) && (map.get("state").trim().length() > 64)) {
+            map.put("state", map.get("state").substring(0, 64));
+        }
+        if ((map.get("postcode") != null) && (map.get("postcode").trim().length() > 10)) {
+            map.put("postcode", map.get("postcode").substring(0, 10));
+        }
+        if ((map.get("country") != null) && (map.get("country").trim().length() > 64)) {
+            map.put("country", map.get("country").substring(0, 64));
+        }
+        if ((map.get("dayphone") != null) && (map.get("dayphone").trim().length() > 64)) {
+            map.put("dayphone", map.get("dayphone").substring(0, 64));
+        }
+        if ((map.get("eveningphone") != null) && (map.get("eveningphone").trim().length() > 64)) {
+            map.put("eveningphone", map.get("eveningphone").substring(0, 64));
+        }
+        if ((map.get("fax") != null) && (map.get("fax").trim().length() > 64)) {
+            map.put("fax", map.get("fax").substring(0, 64));
+        }
+        if ((map.get("mobile") != null) && (map.get("mobile").trim().length() > 64)) {
+            map.put("mobile", map.get("mobile").substring(0, 64));
+        }
 
-	return map;
+        return map;
     }
 
     @Override
     public String getLdapAttr(String ldapAttr) {
-	if (ldapAttr != null) {
-	    return (ldapAttr.startsWith("!") ? ldapAttr.substring(1) : ldapAttr);
-	} else {
-	    return ldapAttr;
-	}
+        if (ldapAttr != null) {
+            return (ldapAttr.startsWith("!") ? ldapAttr.substring(1) : ldapAttr);
+        } else {
+            return ldapAttr;
+        }
     }
 
     private Boolean getAsBoolean(Attribute attr) {
-	String attrString = getSingleAttributeString(attr);
-	if (attrString != null) {
-	    if (attrString.equals("1") || attrString.equals("true")) {
-		return true;
-	    } else if (attrString.equals("0") || attrString.equals("false")) {
-		return false;
-	    }
-	}
-	return null;
+        String attrString = getSingleAttributeString(attr);
+        if (attrString != null) {
+            if (attrString.equals("1") || attrString.equals("true")) {
+                return true;
+            } else if (attrString.equals("0") || attrString.equals("false")) {
+                return false;
+            }
+        }
+        return null;
     }
 
     @Override
     public boolean getDisabledBoolean(Attributes attrs) {
-	String ldapDisabledAttrStr = Configuration.get(ConfigurationKeys.LDAP_DISABLED_ATTR);
-	if (ldapDisabledAttrStr.startsWith("!")) {
-	    ldapDisabledAttrStr = ldapDisabledAttrStr.substring(1);
-	    Attribute ldapDisabledAttr = attrs.get(ldapDisabledAttrStr);
-	    Boolean booleanValue = getAsBoolean(ldapDisabledAttr);
-	    if (booleanValue != null) {
-		return !booleanValue;
-	    } else {
-		// if there is no value, assume not disabled
-		return false;
-	    }
-	} else {
-	    return getAsBoolean(attrs.get(ldapDisabledAttrStr));
-	}
+        String ldapDisabledAttrStr = Configuration.get(ConfigurationKeys.LDAP_DISABLED_ATTR);
+        if (ldapDisabledAttrStr.startsWith("!")) {
+            ldapDisabledAttrStr = ldapDisabledAttrStr.substring(1);
+            Attribute ldapDisabledAttr = attrs.get(ldapDisabledAttrStr);
+            Boolean booleanValue = getAsBoolean(ldapDisabledAttr);
+            if (booleanValue != null) {
+                return !booleanValue;
+            } else {
+                // if there is no value, assume not disabled
+                return false;
+            }
+        } else {
+            return getAsBoolean(attrs.get(ldapDisabledAttrStr));
+        }
 
     }
 
@@ -517,7 +533,7 @@ public class LdapService implements ILdapService {
     }
 
     // get list of LAMS role ids from list of ldap roles
-    private List<String> getRoleIds(List<String> ldapRoles) {
+    private List < String > getRoleIds(List < String > ldapRoles) {
         if (ldapRoles != null) {
             ArrayList<String> roleIds = new ArrayList<String>();
             for (String role : ldapRoles) {
@@ -546,28 +562,28 @@ public class LdapService implements ILdapService {
     private boolean isRoleInList(String list, String role) {
         if ((list != null) && (role != null)) {
             String[] array = list.split(";");
-            for (String s : array) {
-            if (role.contains(s)) {
-                return true;
-            }
+            for (String s: array) {
+                if (role.contains(s)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     // get the multiple values of an ldap attribute
-    private List<String> getAttributeStrings(Attribute attr) {
+    private List < String > getAttributeStrings(Attribute attr) {
         try {
-            ArrayList<String> attrValues = new ArrayList<String>();
+            ArrayList < String > attrValues = new ArrayList < String > ();
             if (attr != null) {
-            NamingEnumeration attrEnum = attr.getAll();
-            while (attrEnum.hasMore()) {
-                Object attrValue = attrEnum.next();
-                if (attrValue != null) {
-                attrValues.add(attrValue.toString());
+                NamingEnumeration attrEnum = attr.getAll();
+                while (attrEnum.hasMore()) {
+                    Object attrValue = attrEnum.next();
+                    if (attrValue != null) {
+                        attrValues.add(attrValue.toString());
+                    }
                 }
-            }
-            return attrValues;
+                return attrValues;
             }
         } catch (NamingException e) {
             log.error("===> Naming exception occurred: " + e.getMessage());
@@ -580,10 +596,10 @@ public class LdapService implements ILdapService {
     public String getSingleAttributeString(Attribute attr) {
         try {
             if (attr != null) {
-            Object attrValue = attr.get();
-            if (attrValue != null) {
-                return attrValue.toString();
-            }
+                Object attrValue = attr.get();
+                if (attrValue != null) {
+                    return attrValue.toString();
+                }
             }
         } catch (NamingException e) {
             log.error("===> Naming exception occurred: " + e.getMessage());
@@ -684,24 +700,24 @@ public class LdapService implements ILdapService {
             // if supported
             ctx.setRequestControls(new Control[] { new PagedResultsControl(pageSize, Control.NONCRITICAL) });
             } catch (Exception e) {
-            messages.add("Error creating control: " + e.getMessage());
-            log.error(e, e);
+                messages.add("Error creating control: " + e.getMessage());
+                log.error(e, e);
             }
 
             // perform ldap search, in batches
             log.info("Searching " + baseDN + " using filter " + filter);
             byte[] cookie = null;
             do {
-            // set search to subtree of base dn
-            SearchControls ctrl = new SearchControls();
-            ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                // set search to subtree of base dn
+                SearchControls ctrl = new SearchControls();
+                ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-            // do the search for all ldap users
-            NamingEnumeration<SearchResult> results = ctx.search(baseDN, filter, ctrl);
-            while (results.hasMore()) {
-                try {
-                    SearchResult result = results.next();
-                    Attributes attrs = result.getAttributes();
+                // do the search for all ldap users
+                NamingEnumeration < SearchResult > results = ctx.search(baseDN, filter, ctrl);
+                while (results.hasMore()) {
+                    try {
+                        SearchResult result = results.next();
+                        Attributes attrs = result.getAttributes();
 
                     // add or update this user to LAMS
                     boolean disabled = getDisabledBoolean(attrs);
@@ -735,10 +751,10 @@ public class LdapService implements ILdapService {
                         "Error processing context result number " + contextResults + ": " + e.getMessage());
                 }
 
-                contextResults++;
-            }
+                    contextResults++;
+                }
 
-            cookie = getPagedResponseCookie(ctx.getResponseControls());
+                cookie = getPagedResponseCookie(ctx.getResponseControls());
 
             // set response cookie to continue paged result
             ctx.setRequestControls(
@@ -774,25 +790,25 @@ public class LdapService implements ILdapService {
         User user = service.getUserByLogin(login);
         if (!disabled) {
             if (user == null) {
-            log.info("Creating new user for LDAP username: " + login);
-            if (createLDAPUser(attrs)) {
-                user = service.getUserByLogin(login);
-                returnCode = LdapService.BULK_UPDATE_CREATED;
+                log.info("Creating new user for LDAP username: " + login);
+                if (createLDAPUser(attrs)) {
+                    user = service.getUserByLogin(login);
+                    returnCode = LdapService.BULK_UPDATE_CREATED;
+                } else {
+                    log.error("Couldn't create new user for LDAP username: " + login);
+                }
             } else {
-                log.error("Couldn't create new user for LDAP username: " + login);
-            }
-            } else {
-            updateLDAPUser(user, attrs);
-            returnCode = LdapService.BULK_UPDATE_UPDATED;
+                updateLDAPUser(user, attrs);
+                returnCode = LdapService.BULK_UPDATE_UPDATED;
             }
             if (!addLDAPUser(attrs, user.getUserId())) {
-            log.error("Couldn't add LDAP user: " + login + " to organisation.");
+                log.error("Couldn't add LDAP user: " + login + " to organisation.");
             }
         } else {
             // remove user from groups and set disabled flag
             if (user != null) {
-            service.disableUser(user.getUserId());
-            returnCode = LdapService.BULK_UPDATE_DISABLED;
+                service.disableUser(user.getUserId());
+                returnCode = LdapService.BULK_UPDATE_DISABLED;
             }
         }
         return returnCode;
@@ -801,11 +817,11 @@ public class LdapService implements ILdapService {
     // get paged result response cookie
     private byte[] getPagedResponseCookie(Control[] controls) {
         if (controls != null) {
-            for (Control control : controls) {
-            if (control instanceof PagedResultsResponseControl) {
-                PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
-                return prrc.getCookie();
-            }
+            for (Control control: controls) {
+                if (control instanceof PagedResultsResponseControl) {
+                    PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
+                    return prrc.getCookie();
+                }
             }
         }
         return null;
@@ -840,15 +856,11 @@ public class LdapService implements ILdapService {
     // ---------------------------------------------------------------------
 
     public void setService(IUserManagementService service) {
-	    this.service = service;
-    }
-
-    public void setTimezoneService(ITimezoneService timezoneService) {
-	    this.timezoneService = timezoneService;
+        this.service = service;
     }
 
     public void setDataSource(DataSource dataSource) {
-	    this.dataSource = dataSource;
+        this.dataSource = dataSource;
     }
 
 }

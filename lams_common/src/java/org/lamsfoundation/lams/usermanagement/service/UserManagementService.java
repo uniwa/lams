@@ -187,80 +187,6 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Organisation saveOrganisation(Organisation organisation, Integer userID) {
-
-        User creator = (User) findById(User.class, userID);
-
-        if (organisation.getOrganisationId() == null) {
-            Date createDateTime = new Date();
-            organisation.setCreateDate(createDateTime);
-            organisation.setCreatedBy(creator);
-
-            save(organisation);
-
-            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
-                createWorkspaceFoldersForOrganisation(organisation, userID, createDateTime);
-            }
-
-            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
-                Organisation pOrg = organisation.getParentOrganisation();
-                // set parent's child orgs
-                Set children = pOrg.getChildOrganisations();
-                if (children == null) {
-                    children = new HashSet();
-                }
-                children.add(organisation);
-                pOrg.setChildOrganisations(children);
-                // get course managers and give them staff role in this new
-                // class
-                Vector < UserDTO > managers = getUsersFromOrganisationByRole(pOrg.getOrganisationId(), Role.GROUP_MANAGER,
-                    false);
-                for (UserDTO m: managers) {
-                    if (m.getUserID() == userID) {
-                        User user = (User) findById(User.class, m.getUserID());
-                        UserOrganisation uo = new UserOrganisation(user, organisation);
-                        log.debug("adding course manager: " + user.getUserId() + " as staff");
-                        UserOrganisationRole uor = new UserOrganisationRole(uo,
-                            (Role) findById(Role.class, Role.ROLE_MONITOR));
-                        HashSet uors = new HashSet();
-                        uors.add(uor);
-                        uo.setUserOrganisationRoles(uors);
-
-                        // attach new UserOrganisation to the Organisation, then
-                        // save the UserOrganisation.
-                        // this way the Set Organisations.userOrganisations contains
-                        // persisted objects,
-                        // and we can safely add new UserOrganisations if necessary
-                        // (i.e. if there are
-                        // several course managers).
-                        Set uos = organisation.getUserOrganisations();
-                        if (uos == null) {
-                            uos = new HashSet();
-                        }
-                        uos.add(uo);
-                        organisation.setUserOrganisations(uos);
-
-                        save(uo);
-                    }
-                }
-            }
-        } else {
-            // update workspace/folder names
-            WorkspaceFolder folder = organisation.getNormalFolder();
-            if (folder != null) {
-                folder.setName(organisation.getName());
-            }
-            folder = organisation.getRunSequencesFolder();
-            if (folder != null) {
-                folder.setName(getRunSequencesFolderName(organisation.getName()));
-            }
-        }
-
-        return organisation;
-    }
-
-    @Override
     public void delete(Object object) {
         baseDAO.delete(object);
     }
@@ -559,6 +485,80 @@ public class UserManagementService implements IUserManagementService, Initializi
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public Organisation saveOrganisation(Organisation organisation, Integer userID) {
+
+        User creator = (User) findById(User.class, userID);
+
+        if (organisation.getOrganisationId() == null) {
+            Date createDateTime = new Date();
+            organisation.setCreateDate(createDateTime);
+            organisation.setCreatedBy(creator);
+
+            save(organisation);
+
+            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.COURSE_TYPE)) {
+                createWorkspaceFoldersForOrganisation(organisation, userID, createDateTime);
+            }
+
+            if (organisation.getOrganisationType().getOrganisationTypeId().equals(OrganisationType.CLASS_TYPE)) {
+                Organisation pOrg = organisation.getParentOrganisation();
+                // set parent's child orgs
+                Set children = pOrg.getChildOrganisations();
+                if (children == null) {
+                    children = new HashSet();
+                }
+                children.add(organisation);
+                pOrg.setChildOrganisations(children);
+                // get course managers and give them staff role in this new
+                // class
+                Vector < UserDTO > managers = getUsersFromOrganisationByRole(pOrg.getOrganisationId(), Role.GROUP_MANAGER,
+                    false);
+                for (UserDTO m: managers) {
+                    if (m.getUserID() == userID) {
+                        User user = (User) findById(User.class, m.getUserID());
+                        UserOrganisation uo = new UserOrganisation(user, organisation);
+                        log.debug("adding course manager: " + user.getUserId() + " as staff");
+                        UserOrganisationRole uor = new UserOrganisationRole(uo,
+                            (Role) findById(Role.class, Role.ROLE_MONITOR));
+                        HashSet uors = new HashSet();
+                        uors.add(uor);
+                        uo.setUserOrganisationRoles(uors);
+
+                        // attach new UserOrganisation to the Organisation, then
+                        // save the UserOrganisation.
+                        // this way the Set Organisations.userOrganisations contains
+                        // persisted objects,
+                        // and we can safely add new UserOrganisations if necessary
+                        // (i.e. if there are
+                        // several course managers).
+                        Set uos = organisation.getUserOrganisations();
+                        if (uos == null) {
+                            uos = new HashSet();
+                        }
+                        uos.add(uo);
+                        organisation.setUserOrganisations(uos);
+
+                        save(uo);
+                    }
+                }
+            }
+        } else {
+            // update workspace/folder names
+            WorkspaceFolder folder = organisation.getNormalFolder();
+            if (folder != null) {
+                folder.setName(organisation.getName());
+            }
+            folder = organisation.getRunSequencesFolder();
+            if (folder != null) {
+                folder.setName(getRunSequencesFolderName(organisation.getName()));
+            }
+        }
+
+        return organisation;
+    }
+
+    @Override
     public void updateOrganisationAndWorkspaceFolderNames(Organisation organisation) {
         baseDAO.update(organisation);
         WorkspaceFolder folder = organisation.getNormalFolder();
@@ -590,22 +590,23 @@ public class UserManagementService implements IUserManagementService, Initializi
     @Override
     @SuppressWarnings("unchecked")
     public List < UserManageBean > getUserManageBeans(Integer orgId) {
-        String query = "select u.userId,u.login,u.title,u.firstName,u.lastName, r " +
+        String query = "select u.userId,u.login,u.email,u.title,u.firstName,u.lastName, r " +
             "from User u left join u.userOrganisations as uo left join uo.userOrganisationRoles as uor left join uor.role as r where uo.organisation.organisationId=?";
         List list = baseDAO.find(query, orgId);
         Map < Integer, UserManageBean > beansMap = new HashMap < > ();
         for (int i = 0; i < list.size(); i++) {
             Object[] data = (Object[]) list.get(i);
             if (beansMap.containsKey(data[0])) {
-                beansMap.get(data[0]).getRoles().add((Role) data[5]);
+                beansMap.get(data[0]).getRoles().add((Role) data[6]);
             } else {
                 UserManageBean bean = new UserManageBean();
                 bean.setUserId((Integer) data[0]);
                 bean.setLogin((String) data[1]);
-                bean.setTitle((String) data[2]);
-                bean.setFirstName((String) data[3]);
-                bean.setLastName((String) data[4]);
-                bean.getRoles().add((Role) data[5]);
+                bean.setEmail((String) data[2]);
+                bean.setTitle((String) data[3]);
+                bean.setFirstName((String) data[4]);
+                bean.setLastName((String) data[5]);
+                bean.getRoles().add((Role) data[6]);
                 beansMap.put((Integer) data[0], bean);
             }
         }

@@ -7,7 +7,6 @@
            				   
 	<bean id="ldapServiceTarget" class="org.lamsfoundation.lams.usermanagement.service.LdapService">
 		<property name="service"><ref bean="userManagementService"/></property>
-		<property name="timezoneService"><ref bean="timezoneService"/></property>
 		<property name="dataSource"><ref bean="dataSource"/></property>
 	</bean>
 	

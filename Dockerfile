@@ -31,7 +31,7 @@ RUN wget "http://download.jboss.org/wildfly/14.0.1.Final/wildfly-14.0.1.Final.ta
 # LAMS checkout and select the correct version
 RUN git clone https://github.com/lamsfoundation/lams.git lams \
     && cd lams \
-    && git checkout e54b402590b4f27560c1a632a65f1082bf9729fd
+    && git checkout 407ddc757b0fe93a17c68f5b4e580043f9ce2dda
 
 ADD ./lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java /app/lams/lams_admin/src/java/org/lamsfoundation/lams/admin/web/controller/LdapConfigController.java
 
