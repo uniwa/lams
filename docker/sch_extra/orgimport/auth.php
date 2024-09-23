@@ -11,6 +11,7 @@ if ($_GET['j_username'] && $_GET['j_password']) {
         );
         try {
             $decoded = JWT::decode($jwt, $publicKey, ["RS256"]);
+            return $decoded;
         } catch (Exception $e) {
             echo 'Invalid token (1)';
             die();

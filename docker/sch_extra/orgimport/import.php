@@ -1,9 +1,13 @@
 <?php
 
 require_once(__DIR__ . '/../../cas-login/autoload.php');
-require_once(__DIR__ . '/auth.php');
+$user = require_once(__DIR__ . '/auth.php');
 require_once(__DIR__ . '/cleanup_entry.php');
 require_once(__DIR__ . '/../../cas-login/cas_config.php');
+
+if ($user->uid !== "dnikoudis") {
+    die("You are not allowed to access this page");
+}
 
 error_reporting(E_ALL);
 ini_set('display_errors', 'on');
