@@ -55,6 +55,8 @@ ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app
 ADD ./lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java
 ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java
 
+ADD ./lams_tool_mindmap/web/pages/monitoring/summary.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/summary.jsp
+
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
     && ln -s /usr/local/bin/sass /usr/bin/sass \
