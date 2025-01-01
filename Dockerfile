@@ -58,6 +58,8 @@ ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.j
 ADD ./lams_tool_mindmap/web/pages/monitoring/summary.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/summary.jsp
 ADD ./lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp
 
+ADD ./lams_tool_larsrc/web/pages/monitoring/comments.jsp /app/lams/lams_tool_larsrc/web/pages/monitoring/comments.jsp
+
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
     && ln -s /usr/local/bin/sass /usr/bin/sass \
