@@ -44,3 +44,7 @@ a[href="https://lams.sch.gr/lams/admin/orgmanage.do?org=1"] {
 #templateContainerCell div[learninglibrarytitle="MCQ"] {
     display: none;
 }
+
+.container > div {
+    width: 100%;
+}
