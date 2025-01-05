@@ -54,7 +54,7 @@ ADD ./lams_central/conf/favicon/lams/favicon.ico /app/lams/lams_central/conf/fav
 ADD ./lams_central/conf/language/lams/ApplicationResources_el_GR.properties /app/lams/lams_central/conf/language/lams/ApplicationResources_el_GR.properties
 ADD ./lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/web/HomeController.java
 ADD ./lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java /app/lams/lams_central/src/java/org/lamsfoundation/lams/security/LDAPAuthenticator.java
-ADD ./lams_central/web/includes/javascript/profile.jsp /app/lams/lams_central/web/includes/javascript/profile.jsp
+ADD ./lams_central/web/includes/javascript/profile.js /app/lams/lams_central/web/includes/javascript/profile.js
 
 ADD ./lams_tool_mindmap/web/pages/monitoring/summary.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/summary.jsp
 ADD ./lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp
