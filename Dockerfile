@@ -58,6 +58,23 @@ ADD ./lams_central/web/includes/javascript/profile.js /app/lams/lams_central/web
 
 ADD ./lams_tool_mindmap/web/pages/monitoring/summary.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/summary.jsp
 ADD ./lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp /app/lams/lams_tool_mindmap/web/pages/monitoring/mindmapDisplay.jsp
+RUN grep -q "getFullName" /app/lams/lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/dto/MindmapUserDTO.java || sed -i '$i\
+\    public String getFullName() {\n\
+\	StringBuilder fullName = new StringBuilder();\n\
+\	if (lastName != null && !lastName.trim().isEmpty()) {\n\
+\	    fullName.append(lastName.trim());\n\
+\	}\n\
+\	if (firstName != null && !firstName.trim().isEmpty()) {\n\
+\	    if (fullName.length() > 0) {\n\
+\		fullName.append(", ");\n\
+\	    }\n\
+\	    fullName.append(firstName.trim());\n\
+\	}\n\
+\	if (fullName.length() == 0 && loginName != null) {\n\
+\	    fullName.append(loginName.trim());\n\
+\	}\n\
+\	return fullName.toString();\n\
+\    }\n' /app/lams/lams_tool_mindmap/src/java/org/lamsfoundation/lams/tool/mindmap/dto/MindmapUserDTO.java
 
 ADD ./lams_tool_larsrc/web/pages/monitoring/comments.jsp /app/lams/lams_tool_larsrc/web/pages/monitoring/comments.jsp
 
