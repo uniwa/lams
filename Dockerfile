@@ -123,8 +123,12 @@ ADD ./docker/conf/nginx_proxy.conf /etc/nginx/conf.d/default.template.proxy
 ADD ./docker/conf/nginx_standalone.conf /etc/nginx/conf.d/default.template.standalone
 ADD ./docker/conf/wildfly_standalone.conf /usr/local/wildfly-14.0.1/bin/standalone.conf
 
-# Make wildfly aware of the proxy
-RUN find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/<http-listener name=\"default\"/<http-listener name=\"default\" proxy-address-forwarding=\"true\"/g" {} \;
+# Make wildfly aware of the proxy and configure connection timeouts to prevent CLOSE_WAIT buildup
+# Timeouts aligned with nginx: 3h read timeout for long class sessions
+RUN find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i "s/<http-listener name=\"default\"/<http-listener name=\"default\" proxy-address-forwarding=\"true\" no-request-timeout=\"30000\" request-parse-timeout=\"10000\" read-timeout=\"10800000\"/g" {} \;
+
+# Configure IO worker threads to handle more concurrent connections (8 IO threads, 256 workers, 30s keepalive)
+RUN find /usr/local/wildfly-14.0.1/standalone/configuration -type f -exec sed -i 's/<worker name="default"\/>/<worker name="default" io-threads="8" task-max-threads="256" task-keepalive="30000"\/>/g' {} \;
 
 # Replace the hardcoded database data
 RUN apk del --purge mariadb mariadb-client && rm -fR /var/lib/mysql && rm -fR /run/mysqld/ && rm -fR /etc/my.cnf* \
