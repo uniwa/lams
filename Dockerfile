@@ -4,7 +4,8 @@ WORKDIR /app
 
 # System packages and dependecies
 RUN apk add build-base npm apache-ant git wget curl nginx fontconfig ttf-dejavu supervisor \
-    && npm install -g sass \
+    # sass is pinned: newer versions ship ESM dependencies that the base image's old Node.js cannot load
+    && npm install -g sass@1.32.13 \
     # Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
 	# then move `envsubst` out of the way so `gettext` can

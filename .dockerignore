@@ -1,0 +1,8 @@
+# Upstream LAMS source tree (the build clones its own pinned copy from GitHub)
+src
+# Not used by the image build
+.git
+lams_docker_setup_db.sql
+**/.DS_Store
+.cursor
+.codebuddy
