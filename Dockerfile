@@ -79,6 +79,10 @@ RUN grep -q "getFullName" /app/lams/lams_tool_mindmap/src/java/org/lamsfoundatio
 
 ADD ./lams_tool_larsrc/web/pages/monitoring/comments.jsp /app/lams/lams_tool_larsrc/web/pages/monitoring/comments.jsp
 
+# LTI launch fix: write the launch form via PrintWriter (UTF-8) instead of ServletOutputStream (ISO-8859-1 only),
+# otherwise Greek user names / activity titles throw CharConversionException
+ADD ./lams_tool_imscc/src/java/org/lamsfoundation/lams/tool/commonCartridge/web/controller/ViewItemController.java /app/lams/lams_tool_imscc/src/java/org/lamsfoundation/lams/tool/commonCartridge/web/controller/ViewItemController.java
+
 ADD ./lams_admin/web /tmp/lams_admin_web
 RUN cp -R /tmp/lams_admin_web/* /app/lams/lams_admin/web && rm -fR /tmp/lams_admin_web \
     && ln -s /usr/local/bin/sass /usr/bin/sass \
